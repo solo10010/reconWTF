@@ -1,10 +1,11 @@
-
+```bash
     dMMMMb     dMMMMMP    .aMMMb    .aMMMb     dMMMMb    dMP dMP dMP  dMMMMMMP     dMMMMMP 
    dMP.dMP    dMP        dMP"VMP   dMP"dMP    dMP dMP   dMP dMP dMP     dMP       dMP      
   dMMMMK"    dMMMP      dMP       dMP dMP    dMP dMP   dMP dMP dMP     dMP       dMMMP     
  dMP"AMF    dMP        dMP.aMP   dMP.aMP    dMP dMP   dMP.dMP.dMP     dMP       dMP        
 dMP dMP    dMMMMMP     VMMMP"    VMMMP"    dMP dMP    VMMMPVMMP"     dMP       dMP         
-                                                                                           
+```
+
 # ATTENTION raw alpha version
 
 **it works well at the moment** 
@@ -51,7 +52,6 @@ dMP dMP    dMMMMMP     VMMMP"    VMMMP"    dMP dMP    VMMMPVMMP"     dMP       d
 | -l, --list | list of goals in a file one by one |
 | -x, --scope | list of domains in the visibility zone |
 | -c, --cookie | cookie -c 'PHPSESSIONID=qweqweqwe' |
-
 | -r, --recon-full | full target exploration ( with the use of attacks ) |
 | -s, --subdomain-search | only subdomain search, resolution, and subdomain capture |
 | -p, --passive | only passive methods that do not affect the target |
