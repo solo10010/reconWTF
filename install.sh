@@ -39,6 +39,7 @@ gotools["webanalyze"]="GO111MODULE=on go get -v -u github.com/rverton/webanalyze
 gotools["cent"]="GO111MODULE=on go get -v -u github.com/xm1k3/cent"
 gotools["sonarbyte"]="GO111MODULE=on go get -v -u github.com/channyein1337/sonarbyte"
 gotools["urlhunter"]"GO111MODULE=on go get -v -u github.com/utkusen/urlhunter"
+gotools["sigurlfind3r"]="GO111MODULE=on go get -u -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r"
 
 declare -A repos
 repos["degoogle_hunter"]="six2dez/degoogle_hunter"
@@ -310,6 +311,8 @@ eval strip -s $HOME/go/bin/* $DEBUG_STD
 
 eval $SUDO cp $HOME/go/bin/* /usr/bin/ $DEBUG_STD
 
-printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/config.yaml)\n - GitHub (~/Tools/.github_tokens)\n - SHODAN (SHODAN_API_KEY in reconftw.cfg)\n - SSRF Server (COLLAB_SERVER in reconftw.cfg) \n - Blind XSS Server (XSS_SERVER in reconftw.cfg) \n - notify (~/.config/notify/notify.conf) \n - theHarvester (~/Tools/theHarvester/api-keys.yml)\n - H8mail (~/Tools/h8mail_config.ini)\n\n${reset}"
+printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/config.yaml)\n - GitHub (~/Tools/.github_tokens)\n - SHODAN (SHODAN_API_KEY in reconftw.cfg)\n - SSRF Server (COLLAB_SERVER in reconftw.cfg) \n - Blind XSS Server (XSS_SERVER in reconftw.cfg) \n - notify (~/.config/notify/notify.conf) \n - theHarvester (~/Tools/theHarvester/api-keys.yml)\n - H8mail (~/Tools/h8mail_config.ini)\n sigurlfind3r (~/.config/sigurlfind3r/conf.yaml) \n\n ${reset}"
 printf "${bgreen} Finished!${reset}\n\n"
 printf "\n\n${bgreen}#######################################################################${reset}\n"
+
+eval sigurlfind3r $DEBUG_STD

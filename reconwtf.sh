@@ -1,31 +1,29 @@
 #!/bin/bash
 
-. ./config.conf # читаем конфиг
-
-see="sed -r 's/\[.+]//' | sed 's/ //g' | sed '/^$/d'"
-
-# определяем функции
+eval . ./config.conf # defaul config file
 
 function help(){
 	echo ""
-	echo " Usage: ./reconwtf.sh [options...] -d <domain> -l <list.txt> -x <scope.txt> -c <cookie>
-					-r -s -p -a -o -h"
+	echo " Usage: ./reconwtf.sh [options...] -d <domain> -m <companu tld>-l <list.txt> -x <scope.txt> 
+			-c <cookie> -f <config.conf> -u <dir out> -r -s -p -a -o -v -h"
 	echo ""
-	echo "  -d, --domain <domain> 	domain target 'example.com' "
-	echo "  -l, --list <list.txt> 	list of goals in a file one by one  "
-	echo "  -x, --scope <scipe.txt> 	list of domains in the visibility zone "
-	echo "  -c, --cookie <cookie>  	cookie -c 'PHPSESSIONID=qweqweqwe'"
+	echo "  -d, --domain 		<domain> 	domain target 'example.com' "
+	echo "  -m, --company 	<name>		copany name 'Tesla inc'"
+	echo "  -x, --scope 		<scope.txt> 	list of domains in the visibility zone "
+	echo "  -g, --config		<config.conf>	config file 'dir/config2.conf' "
+	echo "  -c, --cookie 		<cookie>  	cookie -c 'PHPSESSIONID=qweqweqwe'"
 	echo ""
-	echo "  -r, --recon-full 		full target exploration ( with the use of attacks ) "
-	echo "  -s, --subdimain-search 	only subdomain search, resolution, and subdomain capture "
-	echo "  -p, --passive 		only passive methods that do not affect the target "
-	echo "  -a, --active			full intelligence with the use of attacks "
-	echo "  -o, --osint			minimal exploration with the use of OSINT "
-	echo "  -h, --help 			help to reconWTF"
+	echo "  -r, --recon-full	 		full target exploration ( with the use of attacks ) "
+	echo "  -s, --subdimain-search	 	only subdomain search, resolution, and subdomain capture "
+	echo "  -p, --passive 			only passive methods that do not affect the target "
+	echo "  -a, --active				full intelligence with the use of attacks "
+	echo "  -o, --osint				minimal exploration with the use of OSINT "
+	echo ""
+	echo "  -v, --version				reconWTF version "
+	echo "  -h, --help 				help"
 	echo ""
 	exit
 }
-
 
 # парсим аргументы
 if [[ -z "$1" ]]
@@ -60,17 +58,6 @@ case $key in
 	    exit
     fi
     ;;
-    -l|--list) # список целей
-    target_list="$2"
-    shift # past argument
-    shift # past value
-    if [[ -z $target_list ]]
-    then
-	    echo " -z, --target_list this parameter must have the value!"
-	    echo "  -h, --help help to reconWTF"
-	    exit
-    fi
-    ;;
     -x|--scope) # список доменов в зоне видимости 
     scope_list="$2"
     shift # past argument
@@ -82,6 +69,18 @@ case $key in
 	    exit
     else
 	    echo " "
+    fi
+    ;;
+	-g|--config) # путь до конфига
+    config="$2"
+    shift # past argument
+    shift # past value
+    if [[ -z $config ]]
+    then
+		eval . ./config.conf
+    else
+	    
+		eval . ./$config
     fi
     ;;
     -r|--recon-full) # полная разведка без атак
@@ -120,6 +119,16 @@ case $key in
 	    exit
     fi
     ;;
+	-v|--version) # справка
+    version="$2"
+    shift # past argument
+    shift # past value
+    if [[ -z $version ]]
+    then 
+	    printf "\n reconWTF version $reconWTF_version \n\n"
+	    exit
+    fi
+    ;;
     -h|--help) # справка
     help="$2"
     shift # past argument
@@ -142,15 +151,13 @@ esac
 done
 
 # определяем глобальные переменные
-
+echo "Version: $reconWTF_version"
 if [[ -n $cookie ]]; then # если были переданы куки то записываем куки с хедером
 	header_cookie=$(echo "Cooke: $cookie") # записываем куку в переменнуж с Cookie:
 fi 
 
+see="sed -r 's/\[.+]//' | sed 's/ //g' | sed '/^$/d'" # убрать и STDIN [] \n \f []
 DEBUG_FILE=$recon_dir/$target_domain/.tmp/debug #файл для дебага
-
-# конкатонируем директорию и имя директории цели ( ее домен имя папки )
-recon_domain="$recon_dir/$target_domain"
 
 # проверяем установлены ли инструменты
 function check_tools(){
@@ -262,11 +269,11 @@ function tools_update_resurce(){
 		echo " nuclei update templates "
 		eval nuclei -update-templates
 	fi
-	if [[ $NUCLEI_ADDITIONAL_TEMPLATES == "true" ]]; then
-		echo " nuclei update additional templates "
-			eval cent init
-			eval cent -p ~/nuclei-templates/cent-nuclei-templates
-	fi
+	#if [[ $NUCLEI_ADDITIONAL_TEMPLATES == "true" ]]; then
+	#	echo " nuclei update additional templates "
+	#		eval cent init
+	#		eval cent -p ~/nuclei-templates/cent-nuclei-templates
+	#fi
 	eval webanalyze -update
 
 }
@@ -309,7 +316,7 @@ function scope_domain(){
 	if [[ -n $scope_list ]]; then
 		echo " --= scope list =--"
 		mv $recon_dir/$target_domain/subdomain/subdomains.txt $recon_dir/$target_domain/subdomain/_subdomains.txt
-		cat $recon_dir/$target_domain/subdomain/_subdomains.txt | egrep -i -x -f $scope_list | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
+		cat $recon_dir/$target_domain/subdomain/_subdomains.txt | egrep -i -x -f $scope_list | anew $recon_dir/$target_domain/subdomain/subdomains.txt > $DEBUG_FILE
 		rm $recon_dir/$target_domain/subdomain/_subdomains.txt
 	fi
 }
@@ -459,9 +466,7 @@ function visual_indentification(){
 }
 
 function scope_endpoint(){
-	cat $recon_dir/$target_domain/.tmp/gauplus_endpoint.txt | anew $recon_dir/$target_domain/.tmp/endpoint_extract.txt
-	cat $recon_dir/$target_domain/.tmp/github_endpoint.txt | anew $recon_dir/$target_domain/.tmp/endpoint_extract.txt
-	cat $recon_dir/$target_domain/.tmp/gospider_endpoint.txt | anew $recon_dir/$target_domain/.tmp/endpoint_extract.txt
+	cat $recon_dir/$target_domain/.tmp/*_endpoint.txt | eval $see | anew $recon_dir/$target_domain/.tmp/endpoint_extract.txt
 	if [[ -n $scope_list ]]; then
 		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt | egrep -i -f $scope_list > $recon_dir/$target_domain/webs/url_extract.txt
 	else
@@ -470,7 +475,12 @@ function scope_endpoint(){
 }
 
 function endpoint_enum_passive(){
-true
+	if [[ $SIGURLFIND3R == "true" ]]; then
+		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads $IN_SIGURLFIND3R -c "sigurlfind3r -d "_target_" -iS | anew $recon_dir/$target_domain/.tmp/sigurlfind3r_endpoint.txt"
+		scope_endpoint # функция обедеинения файлов и применение scope
+	else
+		printf "sigurlfind3r == false"
+	fi
 }
 
 function endpoint_enum_agressive(){
@@ -812,6 +822,40 @@ function init(){ # инициализация разведки на основе
 		s3bucket
 		scan_hosts
 		visual_indentification
+		endpoint_enum_passive
+		endpoint_enum_agressive
+		jsfind
+		checkWAF
+		ips
+		testssl
+		scan_port
+		ip2provider
+		nuclei_check
+		header_sec
+		webtehnologies
+		fuzzing
+		url_gf
+		url_ext_file
+		domain_info
+		emaifind
+		google_dorks
+		github_dorks
+		metadata
+		4xxbypass
+		CMSeek
+		clearempity
+	elif [[ -n $recon_full ]]; then
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		webs
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts
+		visual_indentification
+		endpoint_enum_passive
 		endpoint_enum_agressive
 		jsfind
 		checkWAF
