@@ -149,6 +149,19 @@ case $key in
     ;;
 esac
 done
+# проверяем на наличие sudo
+#if [[ $(id -u | grep -o '^0$') != "0" ]]; then
+#    echo "скрипт должен быть запущен от root!!!"
+#	echo "чтобы сохранить домашнюю диркторию запустить sudo -E"
+#	echo "запустить sudo -E ./reconWTF.sh"
+#    exit
+#fi
+# проверяем на наличие sudo -E
+#if [[ $HOME == "/root" ]]; then
+#		echo "sudo должно быть запущен с параметрои -E"
+#		echo "запустить sudo -E ./reconWTF.sh"
+#		exit
+#fi
 
 # определяем глобальные переменные
 echo "Version: $reconWTF_version"
@@ -269,11 +282,11 @@ function tools_update_resurce(){
 		echo " nuclei update templates "
 		eval nuclei -update-templates
 	fi
-	#if [[ $NUCLEI_ADDITIONAL_TEMPLATES == "true" ]]; then
-	#	echo " nuclei update additional templates "
-	#		eval cent init
-	#		eval cent -p ~/nuclei-templates/cent-nuclei-templates
-	#fi
+	if [[ $NUCLEI_ADDITIONAL_TEMPLATES == "true" ]]; then
+		echo " nuclei update additional templates "
+			eval cent init
+			eval cent -p ~/nuclei-templates/cent-nuclei-templates
+	fi
 	eval webanalyze -update
 
 }
@@ -466,11 +479,12 @@ function visual_indentification(){
 }
 
 function scope_endpoint(){
-	cat $recon_dir/$target_domain/.tmp/*_endpoint.txt | eval $see | anew $recon_dir/$target_domain/.tmp/endpoint_extract.txt
+	
+	cat $recon_dir/$target_domain/.tmp/*_endpoint.txt | eval $see | egrep -Eoi "(http|https)://[a-zA-Z0-9./?=_%:-]*" | anew $recon_dir/$target_domain/.tmp/endpoint_extract.txt
 	if [[ -n $scope_list ]]; then
-		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt | egrep -i -f $scope_list > $recon_dir/$target_domain/webs/url_extract.txt
+		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt | egrep -Eoi "(http|https)://[a-zA-Z0-9./?=_%:-]*" | egrep -i -f $scope_list > $recon_dir/$target_domain/webs/url_extract.txt
 	else
-		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt > $recon_dir/$target_domain/webs/url_extract.txt
+		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt | egrep -Eoi "(http|https)://[a-zA-Z0-9./?=_%:-]*" > $recon_dir/$target_domain/webs/url_extract.txt
 	fi
 }
 
@@ -500,9 +514,9 @@ function endpoint_enum_agressive(){
 		scope_endpoint
 		# генерация списков слов на основе конечных точек
 		if [[ $ENDP_GENERATION_LIST == "true" ]]; then
-			cat webs/url_extract.txt | unfurl -u keys | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_words.txt
-			cat webs/url_extract.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_words.txt
-			cat webs/url_extract.txt | tr "[:punct:]" "\n" | anew -q webs/dict_words.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | unfurl -u keys | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q $recon_dir/$target_domain/webs/dict_words.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q $recon_dir/$target_domain/webs/dict_words.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | tr "[:punct:]" "\n" | anew -q $recon_dir/$target_domain/webs/dict_words.txt
 		fi
 	else
 		echo " enpoint enum false "
@@ -513,13 +527,13 @@ function jsfind(){
 	if [[ $JS_GENERAL == "true" ]]; then
 		echo "Start js finds "
 
-		cat $recon_dir/$target_domain/webs/url_extract.txt | grep -i ".js$" > js/js_links.txt
+		cat $recon_dir/$target_domain/webs/url_extract.txt | grep -i ".js$" > $recon_dir/$target_domain/js/js_links.txt
 		if [[ $JS_LIVE_CHECS == "true" ]]; then
 			cat $recon_dir/$target_domain/js/js_links.txt | grep -i ".js$" | httpx -silent -no-color -status-code -H $header_cookie | grep "\[200\]$" | eval $see > $recon_dir/$target_domain/js/live_js_links.txt
 		fi		
 		# download js file
 		if [[ $JS_DOWNLOAD == "true" ]]; then
-			interlace  -tL $recon_dir/$target_domain/js/live_js_links.txt -threads $IN_JS_DOWNLOAD_FILE -c "echo _target_ | python3 $tools/single-tools/DownloadJS.py -c "$cookie" -o $recon_dir/$target_domain/js/jsfile"
+			interlace  -tL $recon_dir/$target_domain/js/live_js_links.txt -threads $IN_JS_DOWNLOAD_FILE -c "echo _target_ | egrep -Eoi '(http|https)://[a-zA-Z0-9./?=_%:-]*' | python3 $tools/single-tools/DownloadJS.py -c "$cookie" -o $recon_dir/$target_domain/js/jsfile"
 		fi
 		#Gather Endpoints From JsFiles
 		if [[ $JS_LINKFIND == "true" ]]; then
@@ -542,7 +556,7 @@ function jsfind(){
 		if [[ $JS_FINDOM_XSS == "true" ]]; then
 			interlace -tL $recon_dir/$target_domain/js/live_js_links.txt -threads 5 -c "bash $tools/single-tools/findomxss.sh _target_" -v
 			#scan
-			cp $recon_dir/$target_domain/domxss_scan.txt $recon_dir/$target_domain/vulns/xss/domxss_scan.txt
+			cp $recon_dir/$target_domain/domxss_scan.txt $recon_dir/$target_domain/vulns/domxss_scan.txt
 			rm domxss_scan.txt
 		fi
 	else
@@ -550,7 +564,7 @@ function jsfind(){
 	fi
 }
 
-checkWAF(){
+function checkWAF(){
 	if [[ $CHECK_WAF == "true" ]]; then
 		echo "start check WAF"
 		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads 5 -c "wafw00f  _target_ >> $recon_dir/$target_domain/.tmp/wafw00f.txt" -v
@@ -591,9 +605,8 @@ function testssl(){
 function scan_port(){
 	if [[ $SCAN_PORT_GENERAL == "true" ]]; then
 		echo "start scan port"
-		mkdir $recon_dir/$target_domain/scan/nmap
-		#cat $recon_dir/$target_domain/hosts/ips.txt | naabu -p 0-10000 -silent -nmap-cli 'nmap -sV' -o $recon_dir/$target_domain/scan/nmap/nmap.txt
-		interlace -tL $recon_dir/$target_domain/hosts/ips.txt -threads $IN_SCAN_PORT_NAABU -c "echo '_target_' | naabu -p $SCAN_PORT_NAABU_PORTS_LIST -silent $SCAN_PORT_NAABU_NAMP_COMMAND >> $recon_dir/$target_domain/scan/nmap/_target_.txt" -v
+		mkdir -p $recon_dir/$target_domain/scan/nmap
+		ports=$(cat $recon_dir/$target_domain/hosts/ips_v4.txt | naabu -silent -p $SCAN_PORT_NAABU_PORTS_LIST | cut -d ':' -f 2 | anew |  tr '\n' ',' | sed s/,$//) && nmap -iL $recon_dir/$target_domain/hosts/ips_v4.txt -p $ports -sV -Pn -sC --script='vulners, http-waf-detect, http-security-headers, dns-zone-transfer, http-cross-domain-policy, http-title, whois-ip' --script-args='mincvss=5.0' -oA $recon_dir/$target_domain/scan/nmap/$target_domain --stylesheet https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
 	else 
 		echo " scan port false "
 	fi
@@ -666,15 +679,20 @@ function fuzzing(){
 function url_gf(){
 	if [[ $GF == "true" ]]; then
 		echo "start GF"
-		gf xss webs/url_extract.txt | anew -q gf/xss.txt
-		gf ssti webs/url_extract.txt | anew -q gf/ssti.txt
-		gf ssrf webs/url_extract.txt | anew -q gf/ssrf.txt
-		gf sqli webs/url_extract.txt | anew -q gf/sqli.txt
-		gf redirect webs/url_extract.txt | anew -q gf/redirect.txt && cat gf/ssrf.txt | anew -q gf/redirect.txt
-		gf rce webs/url_extract.txt | anew -q gf/rce.txt
-		gf potential webs/url_extract.txt | cut -d ':' -f3-5 |anew -q gf/potential.txt
-		cat webs/url_extract.txt | egrep -iv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p | anew -q gf/endpoints.txt
-		gf lfi webs/url_extract.txt | anew -q gf/lfi.txt
+		gf xss $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/xss.txt
+		gf ssti $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/ssti.txt
+		gf ssrf $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/ssrf.txt
+		gf sqli $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/sqli.txt
+		gf idor $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/idor.txt
+		gf base64 $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/base64.txt
+		gf debug_logic $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/debug_logic.txt
+		gf s3-buckets $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/s3-buckets.txt
+		gf interestingparams $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/interestingparams.txt
+		gf redirect $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/redirect.txt && cat $recon_dir/$target_domain/gf/ssrf.txt | anew -q $recon_dir/$target_domain/gf/redirect.txt
+		gf rce $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/rce.txt
+		gf potential $recon_dir/$target_domain/webs/url_extract.txt | cut -d ':' -f3-5 |anew -q $recon_dir/$target_domain/gf/potential.txt
+		cat $recon_dir/$target_domain/webs/url_extract.txt | egrep -iv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p | anew -q $recon_dir/$target_domain/gf/endpoints.txt
+		gf lfi $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/lfi.txt
 	else
 		echo "GF false"
 	fi
@@ -753,7 +771,7 @@ function github_dorks(){
 function metadata(){
 	if [[ $METADATA == "true" ]]; then
 		echo "start metadata"
-		metafinder -d "$target_domain" -l 2 -o $recon_dir/$target_domain/osint -go -bi -ba
+		metafinder -d "$target_domain" -l 100 -o $recon_dir/$target_domain/osint -go -bi -ba
 	else
 		echo "metadata false"
 	fi
@@ -797,8 +815,8 @@ function clearempity(){
 
 function init(){ # инициализация разведки на основе введенных параметров
 	check_tools
-	tools_update_resurce
-	preliminary_actions
+	#tools_update_resurce
+	#preliminary_actions
 	if [[ -n $passive  ]]; then
 		Subdomain_enum_passive
 		SubRresult
@@ -845,39 +863,40 @@ function init(){ # инициализация разведки на основе
 		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then
-		Subdomain_enum_passive
-		Subdomain_enum
-		subdomain_permytation
-		subdomain_bruteforce
-		SubRresult
-		webs
-		zonetransfer_takeovers
-		s3bucket
-		scan_hosts
-		visual_indentification
-		endpoint_enum_passive
-		endpoint_enum_agressive
-		jsfind
-		checkWAF
-		ips
-		testssl
+	
+		#Subdomain_enum_passive
+		#Subdomain_enum
+		#subdomain_permytation
+		#subdomain_bruteforce
+		#SubRresult
+		#webs
+		#zonetransfer_takeovers
+		#s3bucket
+		#scan_hosts
+		#visual_indentification
+		#endpoint_enum_passive
+		#endpoint_enum_agressive
+		#jsfind
+		#checkWAF
+		#ips
+		#testssl
 		scan_port
-		ip2provider
-		nuclei_check
-		header_sec
-		webtehnologies
-		fuzzing
-		url_gf
-		url_ext_file
-		domain_info
-		emaifind
-		google_dorks
-		github_dorks
-		metadata
-		cors
-		openreditrct
-		4xxbypass
-		CMSeek
+		#ip2provider
+		#nuclei_check
+		#header_sec
+		#webtehnologies
+		#fuzzing
+		#url_gf
+		#url_ext_file
+		#domain_info
+		#emaifind
+		#google_dorks
+		#github_dorks
+		#metadata
+		#cors
+		#openreditrct
+		#4xxbypass
+		#CMSeek
 		clearempity
 	elif [[ -n $osint ]]; then
 		Subdomain_enum_passive

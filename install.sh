@@ -225,7 +225,7 @@ for repo in "${!repos[@]}"; do
     if [ "massdns" = "$repo" ]; then
             eval make $DEBUG_STD && strip -s bin/massdns && eval $SUDO cp bin/massdns /usr/bin/ $DEBUG_ERROR
     elif [ "gf" = "$repo" ]; then
-            eval cp -r examples ~/.gf $DEBUG_ERROR
+            eval cp examples/*.json ~/.gf $DEBUG_ERROR
     elif [ "Gf-Patterns" = "$repo" ]; then
             eval mv *.json ~/.gf $DEBUG_ERROR
     elif [ "urldedupe" = "$repo" ]; then
