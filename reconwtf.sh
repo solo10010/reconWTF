@@ -8,9 +8,9 @@ function help(){
 			-c <cookie> -f <config.conf> -u <dir out> -r -s -p -a -o -v -h"
 	echo ""
 	echo "  -d, --domain 		<domain> 	domain target 'example.com' "
-	echo "  -m, --company 	<name>		copany name 'Tesla inc'"
-	echo "  -x, --scope 		<scope.txt> 	list of domains in the visibility zone "
-	echo "  -g, --config		<config.conf>	config file 'dir/config2.conf' "
+	echo "  -m, --company 	<name>		copany name 'Tesla inc' see https://www.whoxy.com/tesla.com"
+	echo "  -x, --scope 		<scope.txt> 	Out of Scope format \.vk.com clear vk subdomain \vk.com clear all vk.com"
+	echo "  -g, --config		<config.conf>	config file '-g dir/config2.conf' "
 	echo "  -c, --cookie 		<cookie>  	cookie -c 'PHPSESSIONID=qweqweqwe'"
 	echo "  -cidr, --cidr		<ip range>	target ip range 192.49,128.0/16"
 	echo ""
@@ -356,7 +356,7 @@ function scope_domain(){
 	if [[ -n $scope_list ]]; then
 		echo " --= scope list =--"
 		mv $recon_dir/$target_domain/subdomain/subdomains.txt $recon_dir/$target_domain/subdomain/_subdomains.txt
-		cat $recon_dir/$target_domain/subdomain/_subdomains.txt | egrep -i -x -f $scope_list | anew $recon_dir/$target_domain/subdomain/subdomains.txt > $DEBUG_FILE
+		cat $recon_dir/$target_domain/subdomain/_subdomains.txt | egrep -i -v -x -f $scope_list | anew $recon_dir/$target_domain/subdomain/subdomains.txt > $DEBUG_FILE
 		rm $recon_dir/$target_domain/subdomain/_subdomains.txt
 	fi
 }
@@ -955,7 +955,7 @@ function clearempity(){
 
 function init(){ # инициализация разведки на основе введенных параметров
 	check_tools
-	#tools_update_resurce
+	tools_update_resurce
 	preliminary_actions
 	if [[ -n $passive  ]]; then
 		Subdomain_enum_passive
