@@ -40,6 +40,7 @@ gotools["cent"]="GO111MODULE=on go get -v -u github.com/xm1k3/cent"
 gotools["sonarbyte"]="GO111MODULE=on go get -v -u github.com/channyein1337/sonarbyte"
 gotools["urlhunter"]"GO111MODULE=on go get -v -u github.com/utkusen/urlhunter"
 gotools["sigurlfind3r"]="GO111MODULE=on go get -u -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r"
+gotools["hakrevdns"]="GO111MODULE=on go get -u -v github.com/hakluke/hakrevdns"
 
 declare -A repos
 repos["degoogle_hunter"]="six2dez/degoogle_hunter"

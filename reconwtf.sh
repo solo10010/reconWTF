@@ -12,6 +12,7 @@ function help(){
 	echo "  -x, --scope 		<scope.txt> 	list of domains in the visibility zone "
 	echo "  -g, --config		<config.conf>	config file 'dir/config2.conf' "
 	echo "  -c, --cookie 		<cookie>  	cookie -c 'PHPSESSIONID=qweqweqwe'"
+	echo "  -cidr, --cidr		<ip range>	target ip range 192.49,128.0/16"
 	echo ""
 	echo "  -r, --recon-full	 		full target exploration ( with the use of attacks ) "
 	echo "  -s, --subdimain-search	 	only subdomain search, resolution, and subdomain capture "
@@ -54,6 +55,17 @@ case $key in
     if [[ -z $company ]]
     then
 	    echo " -c, --company  this parameter must have the value!"
+	    echo "  -h, --help help to reconWTF"
+	    exit
+    fi
+    ;;
+	    -cidr|--cidr) # диапазон ip цели 192.49,128.0/16
+    cidr="$2"
+    shift # past argument
+    shift # past value
+    if [[ -z $cidr ]]
+    then
+	    echo " -cidr, --cidr  target ip range 192.49,128.0/16"
 	    echo "  -h, --help help to reconWTF"
 	    exit
     fi
@@ -197,10 +209,7 @@ function check_tools(){
 	[ -f "$tools/GitDorker/GitDorker.py" ] || { printf "${bred} [*] GitDorker		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/commix/commix.py" ] || { printf "${bred} [*] commix		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/degoogle_hunter/degoogle_hunter.sh" ] || { printf "${bred} [*] degoogle_hunter	[NO]${reset}\n"; allinstalled=false;}
-	[ -f "$tools/single-tools/getjswords.py" ] || { printf "${bred} [*] getjswords   	[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/single-tools/DownloadJS.py" ] || { printf "${bred} [*] getjswords   	[NO]${reset}\n"; allinstalled=false;}
-	[ -f "$tools/single-tools/findomxss.sh" ] || { printf "${bred} [*] getjswords   	[NO]${reset}\n"; allinstalled=false;}
-	[ -f "$tools/single-tools/jsvar.sh" ] || { printf "${bred} [*] getjswords   	[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/JSA/jsa.py" ] || { printf "${bred} [*] JSA		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/cloud_enum/cloud_enum.py" ] || { printf "${bred} [*] cloud_enum		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/DNSCewl/DNScewl" ] || { printf "${bred} [*] DNSCewl		[NO]${reset}\n"; allinstalled=false;}
@@ -263,6 +272,7 @@ function check_tools(){
 	type -P curl &>/dev/null || { printf "${bred} [*] curl	[NO]${reset}\n"; allinstalled=false;}
 	type -P python3 &>/dev/null || { printf "${bred} [*] python3	[NO]${reset}\n"; allinstalled=false;}
 	type -P pip3 &>/dev/null || { printf "${bred} [*] pip3	[NO]${reset}\n"; allinstalled=false;}
+	type -P hakrevdns &>/dev/null || { printf "${bred} [*] hakrevdns	[NO]${reset}\n"; allinstalled=false;}
 
 	if [ "${allinstalled}" = true ]; then
 		printf "${bgreen} Good! All installed! ${reset}\n\n"
@@ -298,6 +308,7 @@ function preliminary_actions(){ # предварительные действи�
 		echo "dnsvalidator gen dnsresolver true"
 		exec dnsvalidator \--no-color \-threads $DNS_VALIDATION_THREADS \-o $tools/wordlist/resolvers.txt &> /dev/null
 	fi
+
 	# создаем нужные директории если их нет. если есть не создаем
 	if ! [ -d $recon_dir/$target_domain/ ]; then
 		mkdir -p $recon_dir
@@ -306,6 +317,7 @@ function preliminary_actions(){ # предварительные действи�
 		touch $recon_dir/$target_domain/.tmp/debug
 		mkdir -p $recon_dir/$target_domain/subdomain
 		mkdir -p $recon_dir/$target_domain/js
+		mkdir -p $recon_dir/$target_domain/js/waybackjs
 		mkdir -p $recon_dir/$target_domain/webs
 		mkdir -p $recon_dir/$target_domain/scan
 		mkdir -p $recon_dir/$target_domain/vulns
@@ -316,11 +328,26 @@ function preliminary_actions(){ # предварительные действи�
 		mkdir -p $recon_dir/$target_domain/gf
 		mkdir -p $recon_dir/$target_domain/osint
 		mkdir -p $recon_dir/$target_domain/scan/header_sec
-		
+		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
+		mkdir -p $recon_dir/$target_domain/cidr
+
 		cd $recon_dir/$target_domain # переходим в папку рекона
 	else
 		cd $recon_dir/$target_domain # переходим в папку рекона
 	fi
+
+	if [[ -n $cidr  ]]; then # если передан cidr вычесляем все ip
+		
+		rm $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt
+		rm $recon_dir/$target_domain/.tmp/cidr.txt
+
+		echo $cidr | anew $recon_dir/$target_domain/.tmp/cidr.txt
+		nmap -sL "$cidr" | awk '/Nmap scan report/{print $NF}' | grep -o --regexp="[0-9]\{1,3\}[\.][0-9]\{1,3\}[\.][0-9]\{1,3\}[\.][0-9]\{1,3\}" | eval $see | anew $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt
+		
+	else
+		echo " "
+	fi
+
 	# обнуляем debug
 	echo "start recon to ${target_domain}" > $recon_dir/$target_domain/.tmp/debug
 }
@@ -361,23 +388,62 @@ function Subdomain_enum(){
 	if [[ $SUB_ENUM_GENERAL == "true" ]]; then
 
 		if [[ $SUB_ENUM_SYBFINDER == "true" ]]; then
-			echo "## запускаем subfinder ##" $debug
-			subfinder -d $target_domain -config $SUBFINDER_CONFIG -nC -silent -recursive -nW | anew $recon_dir/$target_domain/.tmp/subfinder_subdomains.txt  &>>"$DEBUG_FILE"
-		else
-			echo " subfinder false "
+				echo "## запускаем subfinder ##" $debug
+				subfinder -d $target_domain -config $SUBFINDER_CONFIG -nC -silent -recursive -nW | anew $recon_dir/$target_domain/.tmp/subfinder_subdomains.txt  &>>"$DEBUG_FILE"
+			else
+				echo " subfinder false "
 		fi
-		echo "## запускаем amass ##"
+
 		if [[ $SUB_ENUM_AMASS == "true" ]]; then
-			amass enum -d $target_domain -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_subdomains.txt
-			# разрешаем все поддомены и выкатываем конечный результат
+
+			if [[ -n $company && -n $cidr ]]; then
+				echo "выполняю -n company && -n cidr "
+				amass intel -org $company >  $recon_dir/$target_domain/hosts/asn.txt
+				cat $recon_dir/$target_domain/hosts/asn.txt | grep "ASN:" | grep "[0-9]" | awk '{print $2}' | tr '\n' ',' | sed s/,$// > $recon_dir/$target_domain/.tmp/asn_list.txt
+				asn_list=$(cat $recon_dir/$target_domain/.tmp/asn_list.txt)
+
+				amass enum -d $target_domain -cidr $cidr -asn $asn_list -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_and_asn_subdomains.txt
+
+			else
+				echo "amass no cidr and no company"
+			fi
+
+			if [[ -n $cidr && -z $company ]]; then # запускаем amss c cidr если cidr есть а компании нет
+				echo "выаолняю -z company && -n cidr "
+				amass enum -d $target_domain -cidr $cidr -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_subdomains.txt
+			else
+				echo " amass cidr false "
+			fi
+
+			if [[ -n $company && -z $cidr ]]; then
+				echo "выполняю -n company && -z cidr "
+				amass intel -org $company >  $recon_dir/$target_domain/hosts/asn.txt
+				cat $recon_dir/$target_domain/hosts/asn.txt | grep "ASN:" | grep "[0-9]" | awk '{print $2}' | tr '\n' ',' | sed s/,$// > $recon_dir/$target_domain/.tmp/asn_list.txt
+				asn_list=$(cat $recon_dir/$target_domain/.tmp/asn_list.txt)
+
+				amass enum -d $target_domain -asn $asn_list -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_and_asn_subdomains.txt
+
+			else
+				echo "amass enum asn false no company name"
+			fi
+
+			if [[ -n $target_domain && -z $company && -z $cidr ]]; then
+				echo "start -n target_domain && -z company && -z cidr "
+				amass enum -d $target_domain -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_subdomains.txt
+			else
+				echo "amass no target name"
+			fi
+
+
 		else
-			echo " amass false "
+			echo "amss geral false"
 		fi
 	else
 		echo " subdomain enumeration false "
 	fi
 
 }
+
 
 function subdomain_permytation(){
 	if [[ $SUB_ENUM_PERMUTATION == "true" ]]; then
@@ -550,14 +616,50 @@ function jsfind(){
 		fi
 		#Gather Variables from JSFiles For Xss
 		if [[ $JS_VARS == "true" ]]; then
-			cat $recon_dir/$target_domain/js/live_js_links.txt | while read url ; do bash $tools/single-tools/jsvar.sh $url | tee -a $recon_dir/$target_domain/js/js_var.txt ; done
+			#cat $recon_dir/$target_domain/js/live_js_links.txt | while read url ; do bash $tools/single-tools/jsvar.sh $url | tee -a $recon_dir/$target_domain/js/js_var.txt ; done
+			for live_js_links in $(cat $recon_dir/$target_domain/js/live_js_links.txt)
+			do
+				echo -e "\e[1;33m$live_js_links\n\e[32m";
+				result=$(curl -s $live_js_links | grep -Eo "var [a-zA-Z0-9_]+" | sort -u | cut -d" " -f2 | awk 'length($live_js_links) >= 3 {print $live_js_links}')
+				if [[ -n $result ]]; then
+					echo -e "\e[1;33m$live_js_links\n\e[32m \n $result" >> $recon_dir/$target_domain/js/js_var.txt
+				fi
+				
+			done
 		fi	
 		#Find DomXSS
 		if [[ $JS_FINDOM_XSS == "true" ]]; then
-			interlace -tL $recon_dir/$target_domain/js/live_js_links.txt -threads 5 -c "bash $tools/single-tools/findomxss.sh _target_" -v
 			#scan
-			cp $recon_dir/$target_domain/domxss_scan.txt $recon_dir/$target_domain/vulns/domxss_scan.txt
-			rm domxss_scan.txt
+			for live_js_links in $(cat $recon_dir/$target_domain/js/live_js_links.txt)
+			do
+				PATTERN="(document|location|window)\.(URL|documentURI|search|hash|referrer|(location\.)?href|name)"
+				BODY=$(curl -sL ${live_js_links})
+				SCAN=($(echo ${BODY} | grep -Eoin ${PATTERN}))
+				if [[ ! -z "${SCAN}" ]]; then
+					echo -en "---\n\033[0;32m[!] ${live_js_links}\033[0m\n${SCAN}\n"
+					echo -e "---\n${live_js_links}\n${SCAN}" >> $recon_dir/$target_domain/vulns/domxss_scan.txt
+				fi
+			done
+		fi
+
+		# wayback js find scan
+		if [[ $JS_WAYBACK_SCAN == "true" ]]; then
+			mkdir -p $recon_dir/$target_domain/js/waybackjs
+			touch $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt
+			touch $recon_dir/$target_domain/js/waybackjs/live_waybackjs_link.txt
+			for js_links in $(cat $recon_dir/$target_domain/js/js_links.txt)
+				do
+					status_code=$(echo $js_links | httpx -x HEAD -status-code -silent -no-color | grep -oP '(?<=\[).*(?=\])')
+					if [[ $status_code != 200 ]]; then
+						echo "https://web.archive.org/web/20060102150405if_/$js_links" >> $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt
+						status_code2=$(echo "https://web.archive.org/web/20060102150405if_/$js_links" | httpx -x HEAD -status-code -silent -no-color | grep -oP '(?<=\[).*(?=\])')
+						if [[ $status_code2 == 200 ]]; then
+							echo "https://web.archive.org/web/20060102150405if_/$js_links" >> $recon_dir/$target_domain/js/waybackjs/live_waybackjs_link.txt
+						
+						fi
+					fi
+				done
+			interlace -tL $recon_dir/$target_domain/js/live_waybackjs_link.txt -threads $IN_JS_SECRET_FIND -c "python3 $tools/SecretFinder/SecretFinder.py -i _target_ -o cli >> $recon_dir/$target_domain/js/waybackjs_link_srcrets.txt" -v
 		fi
 	else
 		echo "js find false"
@@ -591,6 +693,31 @@ function ips(){
 		echo "IPS false "
 	fi
 }
+
+function cidr_recon(){
+
+	mkdir -p $recon_dir/$target_domain/cidr
+	mkdir -p $recon_dir/$target_domain/cidr/nmap
+
+#	for ip_list in $(cat $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt)
+#	do
+#		result=$(ping -c 2 -W 1 -q $ip_list | grep transmitted)
+#		pattern="2 received";
+#		
+#		 	recived_result=$(echo "$result" | grep "$pattern")
+#			#echo $recived_result
+#		 	if [[ -n $recived_result ]]; then
+#			 	#echo "живой хост $result"
+#				echo $ip_list | anew $recon_dir/$target_domain/cidr/live_ip.txt
+#			fi
+#		
+#	done
+
+	ports=$(cat $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt | naabu -silent -p $SCAN_PORT_NAABU_PORTS_LIST | cut -d ':' -f 2 | anew |  tr '\n' ',' | sed s/,$//) && nmap -iL $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt -p $ports -sV -Pn -sC --script='vulners, http-waf-detect, http-security-headers, dns-zone-transfer, http-cross-domain-policy, http-title, whois-ip' --script-args='mincvss=5.0' -oA $recon_dir/$target_domain/cidr/nmap/nmap_scan --stylesheet https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
+
+
+}
+
 
 function testssl(){
 	if [[ $TESTSSL == "true" ]]; then
@@ -771,7 +898,7 @@ function github_dorks(){
 function metadata(){
 	if [[ $METADATA == "true" ]]; then
 		echo "start metadata"
-		metafinder -d "$target_domain" -l 100 -o $recon_dir/$target_domain/osint -go -bi -ba
+		metafinder -d "$target_domain" -l $IN_METADATA -o $recon_dir/$target_domain/osint -go -bi -ba
 	else
 		echo "metadata false"
 	fi
@@ -780,9 +907,21 @@ function metadata(){
 function CMSeek(){
 	if [[ $CMS_SECURITY == "true" ]]; then
 		echo "Cms SEc start"
-		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "python3 $tools/CMSeeK/cmseek.py -u _target_ --follow-redirect --random-agent" -v
-		cp -r $tools/CMSeeK/Result $recon_dir/$target_domain/scan/CMSeek
+		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
+		#interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "python3 $tools/CMSeeK/cmseek.py -u _target_ --follow-redirect --random-agent" -v
+		
+		#cat cms.json | jq ".cms_id" | tr -d '"'
+		for dirlist in $(ls $tools/CMSeeK/Result/)
+		do
+			cms_id=$(cat $tools/CMSeeK/Result/$dirlist/cms.json | jq ".cms_id" | tr -d '"')
+			if [[ -n $cms_id ]]; then
+				mkdir -p $recon_dir/$target_domain/scan/CMSeeK/$dirlist
+				cp -r $tools/CMSeeK/Result/$dirlist/cms.json $recon_dir/$target_domain/scan/CMSeeK/$dirlist/cms.json
+			fi
+		done
+
 		rm -r $tools/CMSeeK/Result/*
+
 	else
 		echo "cms security false"
 	fi
@@ -806,6 +945,7 @@ function 4xxbypass(){
 	cat $recon_dir/$target_domain/.tmp/dirdar.txt | sed -e '1,12d' | sed '/^$/d' | anew -q $recon_dir/$target_domain/vulns/4xxbypass.txt
 }
 
+
 function clearempity(){
 	find . -type f -empty -exec rm {} \;
 	find . -type d -empty -exec rmdir {} \;
@@ -816,7 +956,7 @@ function clearempity(){
 function init(){ # инициализация разведки на основе введенных параметров
 	check_tools
 	#tools_update_resurce
-	#preliminary_actions
+	preliminary_actions
 	if [[ -n $passive  ]]; then
 		Subdomain_enum_passive
 		SubRresult
@@ -863,40 +1003,41 @@ function init(){ # инициализация разведки на основе
 		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then
-	
-		#Subdomain_enum_passive
-		#Subdomain_enum
-		#subdomain_permytation
-		#subdomain_bruteforce
-		#SubRresult
-		#webs
-		#zonetransfer_takeovers
-		#s3bucket
-		#scan_hosts
-		#visual_indentification
-		#endpoint_enum_passive
-		#endpoint_enum_agressive
-		#jsfind
-		#checkWAF
-		#ips
-		#testssl
+		
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		webs
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts
+		visual_indentification
+		endpoint_enum_passive
+		endpoint_enum_agressive
+		jsfind
+		checkWAF
+		ips
+		cidr_recon
+		testssl
 		scan_port
-		#ip2provider
-		#nuclei_check
-		#header_sec
-		#webtehnologies
-		#fuzzing
-		#url_gf
-		#url_ext_file
-		#domain_info
-		#emaifind
-		#google_dorks
-		#github_dorks
-		#metadata
-		#cors
-		#openreditrct
-		#4xxbypass
-		#CMSeek
+		ip2provider
+		nuclei_check
+		header_sec
+		webtehnologies
+		fuzzing
+		url_gf
+		url_ext_file
+		domain_info
+		emaifind
+		google_dorks
+		github_dorks
+		metadata
+		cors
+		openreditrct
+		4xxbypass
+		CMSeek
 		clearempity
 	elif [[ -n $osint ]]; then
 		Subdomain_enum_passive
