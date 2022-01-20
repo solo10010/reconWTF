@@ -957,7 +957,7 @@ function init(){ # инициализация разведки на основе
 	check_tools
 	tools_update_resurce
 	preliminary_actions
-	if [[ -n $passive  ]]; then
+	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
 		SubRresult
 		webs
@@ -969,7 +969,7 @@ function init(){ # инициализация разведки на основе
 		github_dorks
 		metadata
 		clearempity
-	elif [[ -n $active ]]; then
+	elif [[ -n $active ]]; then # только активные методы сканирования
 		Subdomain_enum_passive
 		Subdomain_enum
 		subdomain_permytation
@@ -1002,7 +1002,7 @@ function init(){ # инициализация разведки на основе
 		4xxbypass
 		CMSeek
 		clearempity
-	elif [[ -n $recon_full ]]; then
+	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
 		
 		Subdomain_enum_passive
 		Subdomain_enum
@@ -1039,7 +1039,7 @@ function init(){ # инициализация разведки на основе
 		4xxbypass
 		CMSeek
 		clearempity
-	elif [[ -n $osint ]]; then
+	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
 		webs
@@ -1050,7 +1050,7 @@ function init(){ # инициализация разведки на основе
 		github_dorks
 		metadata
 		clearempity
-	elif [[ -n $subdomain_serch ]]; then
+	elif [[ -n $subdomain_serch ]]; then # найти субдомены всеми сканированиями и пасивно и активно
 		Subdomain_enum_passive
 		Subdomain_enum
 		subdomain_permytation
