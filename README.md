@@ -195,9 +195,9 @@ cat scope.txt
 - [ ] exploration of company acquisitions
 - [ ] Test the script on other operating systems including on the server
 - [ ] Add bbrf support
-- [ ] make the installation script one with the main script
+- [x] make the installation script one with the main script
 - [ ] Add burp proxy support
-- [ ] make a separate key to check installed utilities
+- [x] make a separate key to check installed utilities
 - [ ] Add a way to check the current scan with the previous one and detect what has changed
 - [ ] Add scan status notifications to ntfy.sh
 - [ ] Add feature to scan github repositories
