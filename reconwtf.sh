@@ -20,6 +20,9 @@ function help(){
 	echo "  -a, --active				full intelligence with the use of attacks "
 	echo "  -o, --osint				minimal exploration with the use of OSINT "
 	echo ""
+	echo "  -in, --install			Install all tools "
+	echo "  -ct, --check-tools			Verify that the tools are installed correctly "
+	echo ""
 	echo "  -v, --version				reconWTF version "
 	echo "  -h, --help 				help"
 	echo ""
@@ -141,6 +144,16 @@ case $key in
 	    exit
     fi
     ;;
+	-in|--install) # установка утилит
+    install_tools="$1"
+    shift # past argument
+    #shift # past value
+    ;;
+	-ct|--check-tools) # установка утилит
+    check_all_tools="$1"
+    shift # past argument
+    #shift # past value
+    ;;
     -h|--help) # справка
     help="$2"
     shift # past argument
@@ -227,8 +240,6 @@ function check_tools(){
 	type -P gowitness &>/dev/null || { printf "${bred} [*] gowitness		[NO]${reset}\n"; allinstalled=false;}
 	type -P findomain &>/dev/null || { printf "${bred} [*] Findomain		[NO]${reset}\n"; allinstalled=false;}
 	type -P amass &>/dev/null || { printf "${bred} [*] Amass		[NO]${reset}\n"; allinstalled=false;}
-	type -P crobat &>/dev/null || { printf "${bred} [*] Crobat		[NO]${reset}\n"; allinstalled=false;}
-	type -P mildew &>/dev/null || { printf "${bred} [*] mildew		[NO]${reset}\n"; allinstalled=false;}
 	type -P waybackurls &>/dev/null || { printf "${bred} [*] Waybackurls	[NO]${reset}\n"; allinstalled=false;}
 	type -P gauplus &>/dev/null || { printf "${bred} [*] gauplus		[NO]${reset}\n"; allinstalled=false;}
 	type -P dnsx &>/dev/null || { printf "${bred} [*] dnsx		[NO]${reset}\n"; allinstalled=false;}
@@ -300,6 +311,414 @@ function tools_update_resurce(){
 	eval webanalyze -update
 
 }
+
+function install_tools(){
+	
+	declare -A gotools
+	gotools["gf"]="go install -v github.com/tomnomnom/gf@latest"
+	gotools["qsreplace"]="go install -v github.com/tomnomnom/qsreplace@latest"
+	gotools["Amass"]="go install -v github.com/OWASP/Amass/v3/...@master"
+	gotools["ffuf"]="go install -v github.com/ffuf/ffuf@latest"
+	gotools["assetfinder"]="go install -v github.com/tomnomnom/assetfinder@latest"
+	gotools["github-subdomains"]="go install -v github.com/gwen001/github-subdomains@latest"
+	gotools["cf-check"]="go install -v github.com/dwisiswant0/cf-check@latest"
+	gotools["waybackurls"]="go install -v github.com/tomnomnom/hacks/waybackurls@latest"
+	gotools["nuclei"]="go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest"
+	gotools["anew"]="go install -v github.com/tomnomnom/anew@latest"
+	gotools["notify"]="go install -v github.com/projectdiscovery/notify/cmd/notify@latest"
+	gotools["dirdar"]="go install -v github.com/m4dm0e/dirdar@latest"
+	gotools["unfurl"]="go install -v github.com/tomnomnom/unfurl@latest"
+	gotools["httpx"]="go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest"
+	gotools["github-endpoints"]="go install -v github.com/gwen001/github-endpoints@latest"
+	gotools["dnsx"]="go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest"
+	gotools["subfinder"]="go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
+	gotools["gauplus"]="go install -v github.com/bp0lr/gauplus@latest"
+	gotools["subjs"]="go install -v github.com/lc/subjs@latest"
+	gotools["Gxss"]="go install -v github.com/KathanP19/Gxss@latest"
+	gotools["gospider"]="go install -v github.com/jaeles-project/gospider@latest"
+	gotools["crlfuzz"]="go install -v github.com/dwisiswant0/crlfuzz/cmd/crlfuzz@latest"
+	gotools["dalfox"]="go install -v github.com/hahwul/dalfox/v2@latest"
+	gotools["puredns"]="go install -v github.com/d3mondev/puredns/v2@latest"
+	gotools["resolveDomains"]="go install -v github.com/Josue87/resolveDomains@latest"
+	gotools["interactsh-client"]="go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest"
+	gotools["analyticsrelationships"]="go install -v github.com/Josue87/analyticsrelationships@latest"
+	gotools["gotator"]="go install -v github.com/Josue87/gotator@latest"
+	gotools["naabu"]="go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest"
+	gotools["hakrawler"]="go install -v github.com/hakluke/hakrawler@latest"
+	gotools["httprobe"]="go install -v github.com/tomnomnom/httprobe@latest"
+	gotools["webanalyze"]="go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest"
+	gotools["cent"]="go install -v github.com/xm1k3/cent@latest"
+	gotools["sonarbyte"]="go install -v github.com/channyein1337/sonarbyte@latest"
+	gotools["urlhunter"]="go install -v github.com/utkusen/urlhunter@latest"
+	gotools["sigurlfind3r"]="go install -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r@latest"
+	gotools["hakrevdns"]="go install -v github.com/hakluke/hakrevdns@latest"
+
+	declare -A repos
+	repos["degoogle_hunter"]="six2dez/degoogle_hunter"
+	repos["pwndb"]="davidtavarez/pwndb"
+	repos["dnsvalidator"]="vortexau/dnsvalidator"
+	repos["dnsrecon"]="darkoperator/dnsrecon"
+	repos["theHarvester"]="laramies/theHarvester"
+	repos["brutespray"]="x90skysn3k/brutespray"
+	repos["wafw00f"]="EnableSecurity/wafw00f"
+	repos["gf"]="tomnomnom/gf"
+	repos["Gf-Patterns"]="1ndianl33t/Gf-Patterns"
+	repos["github-search"]="gwen001/github-search"
+	repos["ctfr"]="UnaPibaGeek/ctfr"
+	repos["LinkFinder"]="dark-warlord14/LinkFinder"
+	repos["Corsy"]="s0md3v/Corsy"
+	repos["CMSeeK"]="Tuhinshubhra/CMSeeK"
+	repos["fav-up"]="pielco11/fav-up"
+	repos["Interlace"]="codingo/Interlace"
+	repos["massdns"]="blechschmidt/massdns"
+	repos["OpenRedireX"]="devanshbatham/OpenRedireX"
+	repos["GitDorker"]="obheda12/GitDorker"
+	repos["testssl"]="drwetter/testssl.sh"
+	repos["ip2provider"]="oldrho/ip2provider"
+	repos["commix"]="commixproject/commix"
+	repos["JSA"]="six2dez/JSA"
+	repos["urldedupe"]="ameenmaali/urldedupe"
+	repos["cloud_enum"]="initstring/cloud_enum"
+	repos["SecretFinder"]="m4ll0k/SecretFinder"
+	repos["h2t"]="gildasio/h2t"
+	repos["DNSCewl"]="codingo/DNSCewl"
+	repos["SecretFinder"]="m4ll0k/SecretFinder"
+	repos["webscreenshot"]="maaaaz/webscreenshot"
+	repos["single-tools"]="solo10010/single-tools"
+	repos["wordlist"]="solo10010/wordlist"
+
+	declare -A pip_tools
+	pip_tools["dnsgen"]="dnsgen"
+	pip_tools["argcomplete"]="argcomplete==1.10.0"
+	pip_tools["dnspython"]="dnspython"
+	pip_tools["requests"]="requests"
+	pip_tools["requests_futures"]="requests_futures"
+	pip_tools["dnspython"]="dnspython>=2.0.0"
+	pip_tools["netaddr"]="netaddr"
+	pip_tools["lxml"]="lxml"
+	pip_tools["flake8"]="flake8"
+	pip_tools["pytest"]="pytest"
+	pip_tools["colorclass"]="colorclass"
+	pip_tools["beautifulsoup4"]="beautifulsoup4"
+	pip_tools["shodan"]="shodan"
+	pip_tools["mmh3"]="mmh3"
+	pip_tools["ipwhois"]="ipwhois"
+	pip_tools["argparse"]="argparse"
+	pip_tools["tqdm"]="tqdm>=4.32.0"
+	pip_tools["fake-useragent"]="fake-useragent"
+	pip_tools["termcolor"]="termcolor"
+	pip_tools["tqdm"]="tqdm"
+	pip_tools["certifi"]="certifi==2018.11.29"
+	pip_tools["chardet"]="chardet==3.0.4"
+	pip_tools["colorama"]="colorama==0.4.1"
+	pip_tools["idna"]="idna==2.8"
+	pip_tools["urllib3"]="urllib3==1.24.2"
+	pip_tools["colorclass"]="colorclass==2.2.0"
+	pip_tools["netaddr"]="netaddr==0.7.20"
+	pip_tools["tqdm"]="tqdm==4.36.1"
+	pip_tools["dnspython"]="dnspython==1.16.0"
+	pip_tools["beautifulsoup4"]="beautifulsoup4==4.9.3"
+	pip_tools["jsbeautifier"]="jsbeautifier"
+	pip_tools["PySocks"]="PySocks==1.6.8"
+	pip_tools["requests_file"]="requests_file"
+	pip_tools["future"]="future"
+	pip_tools["emailfinder"]="emailfinder"
+
+
+	dir=${tools}
+	double_check=false
+
+	if grep -q "ARMv"  /proc/cpuinfo
+	then
+	IS_ARM="True";
+	else
+	IS_ARM="False";
+	fi
+
+	printf "\n\n${bgreen}#######################################################################${reset}\n"
+	printf "${bgreen} reconFTW installer/updater script ${reset}\n\n"
+	printf "${yellow} This may take time. So, go grab a coffee! ${reset}\n\n"
+
+	if [[ $(id -u | grep -o '^0$') == "0" ]]; then
+    	SUDO=" "
+	else
+		if sudo -n false 2>/dev/null; then
+			printf "${bred} Is strongly recommended to add your user to sudoers${reset}\n"
+			printf "${bred} This will avoid prompts for sudo password in the middle of the installation${reset}\n"
+			printf "${bred} And more important, in the middle of the scan (needed for nmap SYN scan)${reset}\n\n"
+			printf "${bred} echo \"${USERNAME}  ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/reconFTW${reset}\n\n"
+		fi
+    	SUDO="sudo"
+	fi
+
+	if [ -f /etc/debian_version ]; then 
+		printf "${bblue} Running: Installing system packages фзе ${reset}\n\n"
+		eval $SUDO apt update -y $DEBUG_STD
+		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium-browser -y $DEBUG_STD
+		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium -y $DEBUG_STD
+		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install go python3 python3-pip build-essential gcc cmake ruby git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx tor medusa xvfb prips -y $DEBUG_STD
+		eval $SUDO systemctl enable tor $DEBUG_STD
+	elif [ -f /etc/redhat-release ]; then
+		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
+		eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
+    	eval $SUDO yum install go chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
+	elif [ -f /etc/arch-release ]; then
+		printf "${bblue} Running: Installing system packages pacman ${reset}\n\n"
+		curl -O https://blackarch.org/strap.sh $DEBUG_STD
+		chmod +x strap.sh $DEBUG_STD
+		sudo ./strap.sh $DEBUG_STD
+		rm ./strap.sh
+
+		eval $SUDO pacman -Syu --noconfirm $DEBUG_STD
+		eval $SUDO pacman -S --noconfirm --overwrite  python3 parallel go python python-pip base-devel gcc cmake ruby git curl libpcap wget zip nmap chromium lynx pv bind openssl libffi libxml2 libxslt zlib nmap jq tor medusa xorg-server-xvfb -y $DEBUG_STD
+    	#eval $SUDO systemctl enable --now tor.service $DEBUG_STD
+	elif [ -f /etc/os-release ]; then install_yum;  #/etc/os-release fall in yum for some RedHat and Amazon Linux instances
+		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
+		eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
+    	eval $SUDO yum install go chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
+	fi
+
+	eval git config --global --unset http.proxy $DEBUG_STD
+	eval git config --global --unset https.proxy $DEBUG_STD
+
+
+
+
+# Installing latest Golang version
+#version=$(curl -L -s https://golang.org/VERSION?m=text)
+version="go1.17.6"
+printf "${bblue} Running: Installing/Updating Golang ${reset}\n\n"
+if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [ "$version" = $(go version | cut -d " " -f3) ]
+    then
+        printf "${bgreen} Golang is already installed and updated ${reset}\n\n"
+    else
+        eval $SUDO rm -rf /usr/local/go $DEBUG_STD
+        if [ "True" = "$IS_ARM" ]; then
+            if [ "True" = "$RPI_3" ]; then
+                eval wget https://dl.google.com/go/${version}.linux-armv6l.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf ${version}.linux-armv6l.tar.gz $DEBUG_STD
+            elif [ "True" = "$RPI_4" ]; then
+                eval wget https://dl.google.com/go/${version}.linux-arm64.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf ${version}.linux-arm64.tar.gz $DEBUG_STD
+            fi
+        elif [ "True" = "$IS_MAC" ]; then
+            if [ "True" = "$IS_ARM" ]; then
+                eval wget https://dl.google.com/go/${version}.darwin-arm64.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf ${version}.darwin-arm64.tar.gz $DEBUG_STD
+            else
+                eval wget https://dl.google.com/go/${version}.darwin-amd64.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf ${version}.darwin-amd64.tar.gz $DEBUG_STD
+            fi
+        else
+            eval wget https://dl.google.com/go/${version}.linux-amd64.tar.gz $DEBUG_STD
+            eval $SUDO tar -C /usr/local -xzf ${version}.linux-amd64.tar.gz $DEBUG_STD
+        fi
+        eval $SUDO ln -sf /usr/local/go/bin/go /usr/local/bin/
+        rm -rf $version*
+        export GOROOT=/usr/local/go
+        export GOPATH=$HOME/go
+        export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
+		
+go_text_check=$(cat ~/${profile_shell} | grep "export GOROOT=/usr/local/go")
+# проверяем установлен ли голанд в профиле
+if [[ $go_text_check == "export GOROOT=/usr/local/go" ]]; then
+    echo "go ur exposts install"
+else
+cat << EOF >> ~/${profile_shell}
+# Golang vars
+export GOROOT=/usr/local/go
+export GOPATH=\$HOME/go
+export PATH=\$GOPATH/bin:\$GOROOT/bin:\$HOME/.local/bin:\$PATH
+EOF
+fi	
+
+fi
+
+[ -n "$GOPATH" ] || { printf "${bred} GOPATH env var not detected, add Golang env vars to your \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
+[ -n "$GOROOT" ] || { printf "${bred} GOROOT env var not detected, add Golang env vars to your \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
+
+printf "${bblue} Running: Installing requirements ${reset}\n\n"
+
+mkdir -p ~/.gf
+mkdir -p $tools
+mkdir -p ~/.config/notify/
+mkdir -p ~/.config/amass/
+mkdir -p ~/.config/nuclei/
+touch $dir/.github_tokens
+
+#eval wget -N -c https://bootstrap.pypa.io/get-pip.py $DEBUG_STD && eval python3 get-pip.py $DEBUG_STD
+#eval rm -f get-pip.py $DEBUG_STD
+#eval ln -s /usr/local/bin/pip3 /usr/bin/pip3 $DEBUG_STD
+
+printf "${bblue} Running: Installing Golang tools (${#gotools[@]})${reset}\n\n"
+go env -w GO111MODULE=auto
+go_step=0
+for gotool in "${!gotools[@]}"; do
+    go_step=$((go_step + 1))
+    eval ${gotools[$gotool]} #$DEBUG_STD
+    exit_status=$?
+    if [ $exit_status -eq 0 ]
+    then
+        printf "${yellow} $gotool installed (${go_step}/${#gotools[@]})${reset}\n"
+    else
+        printf "${red} Unable to install $gotool, try manually (${go_step}/${#gotools[@]})${reset}\n"
+        double_check=true
+    fi
+done
+
+
+printf "${bblue}\n Running: Installing pip3 requements (${#pip_tools[@]})${reset}\n\n"
+pip_step=0
+for pip_tool in "${!pip_tools[@]}"; do
+    pip_step=$((pip_step + 1))
+    eval pip install ${pip_tools[$pip_tool]} $DEBUG_STD
+    exit_status=$?
+    if [ $exit_status -eq 0 ]
+    then
+        printf "${yellow} $pip_tool installed (${pip_step}/${#pip_tools[@]})${reset}\n"
+    else
+        printf "${red} Unable to install $pip_tool, try manually (${pip_step}/${#pip_tools[@]})${reset}\n"
+       double_check=true
+    fi
+done
+
+
+printf "${bblue}\n Running: Installing repositories (${#repos[@]})${reset}\n\n"
+
+eval git clone https://github.com/projectdiscovery/nuclei-templates ~/nuclei-templates $DEBUG_STD
+eval git clone https://github.com/geeknik/the-nuclei-templates.git ~/nuclei-templates/extra_templates $DEBUG_STD
+eval nuclei -update-templates $DEBUG_STD
+cd ~/nuclei-templates/extra_templates && eval git pull $DEBUG_STD
+cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+eval sed -i 's/^#random-agent: false/random-agent: true/' ~/.config/nuclei/config.yaml $DEBUG_ERROR
+eval git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git $dir/sqlmap $DEBUG_STD
+eval git clone --depth 1 https://github.com/drwetter/testssl.sh.git $dir/testssl.sh $DEBUG_STD
+
+# Standard repos installation
+repos_step=0
+for repo in "${!repos[@]}"; do
+    repos_step=$((repos_step + 1))
+    eval git clone https://github.com/${repos[$repo]} $dir/$repo $DEBUG_STD
+    eval cd $dir/$repo $DEBUG_STD
+    eval git pull $DEBUG_STD
+    exit_status=$?
+    if [ $exit_status -eq 0 ]
+    then
+        printf "${yellow} $repo installed (${repos_step}/${#repos[@]})${reset}\n"
+    else
+        printf "${red} Unable to install $repo, try manually (${repos_step}/${#repos[@]})${reset}\n"
+        double_check=true
+    fi
+    if [ -s "setup.py" ]; then
+        eval $SUDO python3 setup.py install $DEBUG_STD
+    fi
+    if [ "massdns" = "$repo" ]; then
+            eval make $DEBUG_STD && strip -s bin/massdns && eval $SUDO cp bin/massdns /usr/bin/ $DEBUG_ERROR
+    elif [ "gf" = "$repo" ]; then
+            eval cp examples/*.json ~/.gf $DEBUG_ERROR
+    elif [ "Gf-Patterns" = "$repo" ]; then
+            eval mv *.json ~/.gf $DEBUG_ERROR
+    elif [ "urldedupe" = "$repo" ]; then
+            eval cmake CMakeLists.txt $DEBUG_STD
+            eval make $DEBUG_STD
+            eval $SUDO cp ./urldedupe /usr/bin/ $DEBUG_STD
+    elif [ "DNSCewl" = "$repo" ]; then
+	    eval makepkg -sri $DEBUG_STD
+	    eval cp DNSCewl/DNSCewl /usr/local/bin/DNSCewl $DEBUG_STD
+    fi
+    cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+done
+
+if [ "True" = "$IS_ARM" ]
+    then
+        eval wget -N -c https://github.com/Findomain/Findomain/releases/latest/download/findomain-armv7  $DEBUG_STD
+        eval $SUDO mv findomain-armv7 /usr/bin/findomain
+    else
+        eval wget -N -c https://github.com/Findomain/Findomain/releases/latest/download/findomain-linux $DEBUG_STD
+        eval wget -N -c https://github.com/sensepost/gowitness/releases/download/2.3.4/gowitness-2.3.4-linux-amd64 $DEBUG_STD
+        eval wget -N -c https://github.com/Edu4rdSHL/unimap/releases/download/0.4.0/unimap-linux $DEBUG_STD
+        eval $SUDO mv gowitness-2.3.4-linux-amd64 /usr/bin/gowitness
+        eval $SUDO mv findomain-linux /usr/bin/findomain
+        eval $SUDO mv unimap-linux /usr/bin/unimap
+fi
+eval $SUDO chmod 755 /usr/bin/findomain
+eval $SUDO chmod 755 /usr/bin/gowitness
+eval $SUDO chmod 755 /usr/bin/unimap
+eval subfinder $DEBUG_STD
+eval subfinder $DEBUG_STD
+
+printf "${bblue}\n Running: Downloading required files ${reset}\n\n"
+## Downloads
+eval wget -nc -O ~/.config/amass/config.ini https://raw.githubusercontent.com/OWASP/Amass/master/examples/config.ini $DEBUG_STD
+eval wget -nc -O ~/.gf/potential.json https://raw.githubusercontent.com/devanshbatham/ParamSpider/master/gf_profiles/potential.json $DEBUG_STD
+eval wget -nc -O ~/.config/notify/notify.conf https://gist.githubusercontent.com/six2dez/23a996bca189a11e88251367e6583053/raw/a66c4d8cf47a3bc95f5e9ba84773428662ea760c/notify_sample.conf $DEBUG_STD
+mkdir -p wordlist
+mkdir -p single-tools
+
+eval wget -nc -O wordlist/subdomains_big.txt https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt $DEBUG_STD
+
+## Last check
+if [ "$double_check" = "true" ]; then
+    printf "${bblue} Running: Double check for installed tools ${reset}\n\n"
+    go_step=0
+    for gotool in "${!gotools[@]}"; do
+        go_step=$((go_step + 1))
+        eval type -P $gotool $DEBUG_STD || { eval ${gotools[$gotool]} $DEBUG_STD; }
+        exit_status=$?
+    done
+    repos_step=0
+    for repo in "${!repos[@]}"; do
+        repos_step=$((repos_step + 1))
+        eval cd $dir/$repo $DEBUG_STD || { eval git clone https://github.com/${repos[$repo]} $dir/$repo $DEBUG_STD && cd $dir/$repo; }
+        eval git pull $DEBUG_STD
+        exit_status=$?
+        if [ -s "setup.py" ]; then
+            eval $SUDO python3 setup.py install $DEBUG_STD
+        fi
+        if [ "massdns" = "$repo" ]; then
+                eval make $DEBUG_STD && strip -s bin/massdns && eval $SUDO cp bin/massdns /usr/bin/ $DEBUG_ERROR
+        elif [ "gf" = "$repo" ]; then
+                eval cp -r examples ~/.gf $DEBUG_ERROR
+        elif [ "Gf-Patterns" = "$repo" ]; then
+                eval mv *.json ~/.gf $DEBUG_ERROR
+        fi
+        cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+    done
+fi
+
+printf "${bblue} Running: Performing last configurations ${reset}\n\n"
+## Last steps
+if [ ! -s "wordlist/resolvers.txt" ] || [ $(find "wordlist/resolvers.txt" -mtime +1 -print) ]; then
+    printf "${yellow} Resolvers seem older than 1 day\n Generating custom resolvers... ${reset}\n\n"
+    eval rm -f wordlist/resolvers.txt &>/dev/null
+    eval dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 100 -o wordlist/resolvers.txt $DEBUG_STD
+fi
+eval h8mail -g $DEBUG_STD
+
+## Stripping all Go binaries
+eval strip -s $HOME/go/bin/* $DEBUG_STD
+
+eval $SUDO cp $HOME/go/bin/* /usr/bin/ $DEBUG_STD
+
+printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/config.yaml)\n - GitHub (~/Tools/.github_tokens)\n - SHODAN (SHODAN_API_KEY in reconftw.cfg)\n - SSRF Server (COLLAB_SERVER in reconftw.cfg) \n - Blind XSS Server (XSS_SERVER in reconftw.cfg) \n - notify (~/.config/notify/notify.conf) \n - theHarvester (~/Tools/theHarvester/api-keys.yml)\n - H8mail (~/Tools/h8mail_config.ini)\n sigurlfind3r (~/.config/sigurlfind3r/conf.yaml) \n\n ${reset}"
+printf "${bgreen} Finished!${reset}\n\n"
+printf "${bgreen} Check installed utilities${reset}\n\n"
+printf "${bgreen} ./reconwtf.sh -ct${reset}\n\n"
+
+
+printf "\n\n${bgreen}#######################################################################${reset}\n"
+
+#eval sigurlfind3r $DEBUG_STD
+
+#tools_update_resurce
+#check_tools
+
+#exit
+
+}
+
+
+
 
 function preliminary_actions(){ # предварительные действия создаем директорию цели итд..
 
@@ -939,7 +1358,7 @@ function openreditrct(){
 
 }
 
-function 4xxbypass(){
+function x4xxbypass(){
 
 	cat $recon_dir/$target_domain/fuzzing/*.txt | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | dirdar -threads 5 -only-ok > $recon_dir/$target_domain/.tmp/dirdar.txt
 	cat $recon_dir/$target_domain/.tmp/dirdar.txt | sed -e '1,12d' | sed '/^$/d' | anew -q $recon_dir/$target_domain/vulns/4xxbypass.txt
@@ -954,9 +1373,15 @@ function clearempity(){
 
 
 function init(){ # инициализация разведки на основе введенных параметров
-	check_tools
-	tools_update_resurce
-	preliminary_actions
+	if [[ -n $check_all_tools ]]; then
+		check_tools
+	fi
+	if [[ -n $install_tools ]]; then
+		install_tools
+	fi
+	#check_tools
+	#tools_update_resurce
+	#preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
 		SubRresult
@@ -999,7 +1424,7 @@ function init(){ # инициализация разведки на основе
 		google_dorks
 		github_dorks
 		metadata
-		4xxbypass
+		x4xxbypass
 		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
@@ -1036,7 +1461,7 @@ function init(){ # инициализация разведки на основе
 		metadata
 		cors
 		openreditrct
-		4xxbypass
+		x4xxbypass
 		CMSeek
 		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
@@ -1060,6 +1485,7 @@ function init(){ # инициализация разведки на основе
 		checkWAF
 		s3bucket
 		clearempity
+
 	fi
 }
 

@@ -17,7 +17,7 @@ dMP dMP    dMMMMMP     VMMMP"    VMMMP"    dMP dMP    VMMMPVMMP"     dMP       d
 git clone https://github.com/solo10010/reconWTF
 cd reconWTF
 chmod +x *.sh
-./install.sh
+sh reconWTF --install
 ```
 
 # CONFIG FILE
@@ -59,6 +59,8 @@ chmod +x *.sh
 
 | Flag | Description |
 |------|-------------|
+| -in, --install | Install all tools |
+| -ct, --check-tools | Verify that the tools are installed correctly |
 | -g, --config | config file '-g dir/config2.conf' |
 |-v, --version | reconWTF version |
 | -h, --help | help |
