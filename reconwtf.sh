@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# interlaces fix https://github.com/codingo/Interlace/issues/156
 eval . ./config.conf # defaul config file
 
 function help(){
@@ -305,8 +306,8 @@ function tools_update_resurce(){
 	fi
 	if [[ $NUCLEI_ADDITIONAL_TEMPLATES == "true" ]]; then
 		echo " nuclei update additional templates "
-			eval cent init
-			eval cent -p ~/nuclei-templates/cent-nuclei-templates
+			#eval cent init
+			#eval cent -p ~/nuclei-templates/cent-nuclei-templates
 	fi
 	eval webanalyze -update
 
@@ -345,7 +346,7 @@ function install_tools(){
 	gotools["gotator"]="go install -v github.com/Josue87/gotator@latest"
 	gotools["naabu"]="go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest"
 	gotools["hakrawler"]="go install -v github.com/hakluke/hakrawler@latest"
-	gotools["httprobe"]="go install -v github.com/tomnomnom/httprobe@latest"
+	gotools["httprobe"]="go install -v github.com/tomnomnom/httprobe@@master"
 	gotools["webanalyze"]="go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest"
 	gotools["cent"]="go install -v github.com/xm1k3/cent@latest"
 	gotools["sonarbyte"]="go install -v github.com/channyein1337/sonarbyte@latest"
@@ -423,6 +424,9 @@ function install_tools(){
 	pip_tools["requests_file"]="requests_file"
 	pip_tools["future"]="future"
 	pip_tools["emailfinder"]="emailfinder"
+	pip_tools["metafinder"]="metafinder"
+	pip_tools["tqdm"]="tqdm==4.62.3"
+	pip_tools["aiohttp"]="aiohttp"
 
 
 	dir=${tools}
@@ -791,7 +795,7 @@ function SubRresult(){
 function Subdomain_enum_passive(){
 	if [[ $SUB_ENUM_GENERAL == "true" ]]; then
 			echo " запускается sonarbyte "
-			echo "$target_domain" | sonarbyte | anew $recon_dir/$target_domain/.tmp/sonarbyte_subdomains.txt &>>"$DEBUG_FILE"
+			sonarbyte -d $target_domain | anew $recon_dir/$target_domain/.tmp/sonarbyte_subdomains.txt &>>"$DEBUG_FILE"
 			# запускаем certfinder без dig он не работает
 			if [[ $SUB_ENUM_CERT == "true" ]]; then
 				echo "запускается cert"
@@ -808,7 +812,7 @@ function Subdomain_enum(){
 
 		if [[ $SUB_ENUM_SYBFINDER == "true" ]]; then
 				echo "## запускаем subfinder ##" $debug
-				subfinder -d $target_domain -config $SUBFINDER_CONFIG -nC -silent -recursive -nW | anew $recon_dir/$target_domain/.tmp/subfinder_subdomains.txt  &>>"$DEBUG_FILE"
+				subfinder -d $target_domain -config $SUBFINDER_CONFIG -nc -silent -recursive -nW | anew $recon_dir/$target_domain/.tmp/subfinder_subdomains.txt  &>>"$DEBUG_FILE"
 			else
 				echo " subfinder false "
 		fi
@@ -918,7 +922,9 @@ function webs(){
 	if [[ $WEBS_GENERAL == "true" ]]; then
 		echo " subdomain http probing "
 		if [[ $WEBS_SUB_HTTPPROBE == "true" ]]; then
-			cat $recon_dir/$target_domain/subdomain/subdomains.txt | httprobe -prefer-https > $recon_dir/$target_domain/webs/webs.txt
+			#cat $recon_dir/$target_domain/subdomain/subdomains.txt | httpx -silent -random-agent -t 100 -nc -fr -maxr 2 -fhr -maxhr 10 -p 8080,10000,20000,2222,7080,9009,7443,2087,2096,8443,4100,2082,2083,2086,9999,2052,9001,9002,7000,7001,8082,8084,8085,8010,9000,2078,2080,2079,2053,2095,4000,5280,8888,9443,5800,631,8000,8008,8087,84,85,86,88,10125,9003,7071,8383,7547,3434,10443,8089,3004,81,4567,7081,82,444,1935,3000,9998,4433,4431,4443,83,90,8001,8099,80,300,443,591,593,832,981,1010,1311,2480,3128,3333,4243,4711,4712,4993,5000,5104,5108,6543,7396,7474,8014,8042,8069,8081,8088,8090,8091,8118,8123,8172,8222,8243,8280,8281,8333,8500,8834,8880,8983,9043,9060,9080,9090,9091,9200,9800,9981,12443,16080,18091,18092,20720,28017 | eval $see | anew $recon_dir/$target_domain/webs/webs_uncommon_ports.txt
+			cat $recon_dir/$target_domain/subdomain/subdomains.txt | httprobe --prefer-https  | anew $recon_dir/$target_domain/webs/webs.txt
+			
 		fi	
 	else 
 		echo " web general false "
@@ -988,7 +994,7 @@ function endpoint_enum_agressive(){
 		if [[ $ENDP_ENUM_GAUPLUS == "true" ]]; then
 			cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | gauplus -random-agent > $recon_dir/$target_domain/.tmp/gauplus_endpoint.txt
 		fi
-		if [[ $ENDP_ENUM_GITHUB == "true" ]]; then
+		if [[ $ENDP_ENUM_GITHUB == "true" && $GITHUB_DORKS != "XXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
 			python3 $tools/github-search/github-endpoints.py -t $GITHUB_TOKEN -d $target_domain > $recon_dir/$target_domain/.tmp/github_endpoint.txt
 		fi	
 		if [[ $ENDP_ENUM_GOSPIDER == "true" ]]; then
@@ -1022,19 +1028,23 @@ function jsfind(){
 		fi
 		#Gather Endpoints From JsFiles
 		if [[ $JS_LINKFIND == "true" ]]; then
+			echo "" > $recon_dir/$target_domain/js/js_endpoints.txt
 			interlace -tL $recon_dir/$target_domain/js/live_js_links.txt -threads $IN_JS_LINK_FIND -c "echo 'Scanning _target_ Now' ; python3 ~/Tools/LinkFinder/linkfinder.py -d -i _target_ -o cli >> $recon_dir/$target_domain/js/js_endpoints.txt" -v	
 		fi
 		#Gather Secrets From Js Files
 		if [[ $JS_SECRET == "true" ]]; then
+			echo "" > $recon_dir/$target_domain/js/jslinksecret.txt
 			interlace -tL $recon_dir/$target_domain/js/live_js_links.txt -threads $IN_JS_SECRET_FIND -c "python3 $tools/SecretFinder/SecretFinder.py -i _target_ -o cli >> $recon_dir/$target_domain/js/jslinksecret.txt" -v
 		fi
 		#Gather JSFilesWordlist	
 		if [[ $JS_WORDS == "true" ]]; then
+			echo "" > $recon_dir/$target_domain/js/jswordlist.txt
 			cat $recon_dir/$target_domain/js/live_js_links.txt | python3 $tools/single-tools/getjswords.py >> $recon_dir/$target_domain/.tmp/temp_jswordlist.txt
-			cat $recon_dir/$target_domain/.tmp/temp_jswordlist.txt | sort -u >> $recon_dir/$target_domain/js/jswordlist.txt
+			cat $recon_dir/$target_domain/.tmp/temp_jswordlist.txt | sort -u > $recon_dir/$target_domain/js/jswordlist.txt
 		fi
 		#Gather Variables from JSFiles For Xss
 		if [[ $JS_VARS == "true" ]]; then
+			echo "" > $recon_dir/$target_domain/js/js_var.txt
 			#cat $recon_dir/$target_domain/js/live_js_links.txt | while read url ; do bash $tools/single-tools/jsvar.sh $url | tee -a $recon_dir/$target_domain/js/js_var.txt ; done
 			for live_js_links in $(cat $recon_dir/$target_domain/js/live_js_links.txt)
 			do
@@ -1048,6 +1058,7 @@ function jsfind(){
 		fi	
 		#Find DomXSS
 		if [[ $JS_FINDOM_XSS == "true" ]]; then
+			echo "" > $recon_dir/$target_domain/vulns/domxss_scan.txt
 			#scan
 			for live_js_links in $(cat $recon_dir/$target_domain/js/live_js_links.txt)
 			do
@@ -1201,11 +1212,12 @@ function header_sec(){
 function webtehnologies(){
 	if [[ $CHECK_WEBTEHNOLOGIES == "true" ]]; then
 		echo " start check webtechnologies"
-		
-		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads 5 -c "webanalyze -host _target_ -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/webtehnologies.txt" -v
-		rm technologies.json
+		echo "$reconwtf_dir"
+		mkdir -p $recon_dir/$target_domain/scan/webtechnologies
+		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads 5 -c "webanalyze -host _target_ -apps $reconwtf_dir/technologies.json -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/webtehnologies.txt" -v
+		rm $reconwtf_dir/*.json
 		echo " start check nuclei webtechnologies"
-		cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/technologies -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/nuclei_webtehnologies.txt
+		#cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/technologies -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/nuclei_webtehnologies.txt
 	else
 		echo "webtechnologies false"
 	fi
@@ -1214,6 +1226,7 @@ function webtehnologies(){
 function fuzzing(){
 	if [[ $FFUZING == "true" ]]; then
 	echo "FFUZING start"
+		mkdir -p $recon_dir/$target_domain/fuzzing
 		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads $IN_FFUZING -c "ffuf -mc all -fc 404 -ac -t $FFUF_TIME -sf -s -H '$header_cookie' -w ${fuzzing_list} -maxtime $FFUF_MAXTIME -u _target_/FUZZ -of csv -o $recon_dir/$target_domain/fuzzing/_cleantarget_.csv -ac" -o fuzzing
 		cat $recon_dir/$target_domain/fuzzing/*.csv | cut -d ',' -f2,5,6 | tr ',' ' ' | awk '{ print $2 " " "" $1}' | tail -n +2 | sort -k1 | anew -q $recon_dir/$target_domain/fuzzing/ffuz_out.txt
 		rm -r $recon_dir/$target_domain/fuzzing/*.csv
@@ -1304,7 +1317,7 @@ function google_dorks(){
 }
 
 function github_dorks(){
-	if [[ $GITHUB_DORKS == "true" ]]; then
+	if [[ $GITHUB_DORKS == "true" && $GITHUB_DORKS != "XXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
 		echo "start github dorcs"
 		python3 $tools/GitDorker/GitDorker.py -t $GITHUB_TOKEN -e 5 -q $target_domain -p -ri -d "$tools/GitDorker/Dorks/alldorksv3" | grep "\[+\]" | grep "git" | anew -q $recon_dir/$target_domain/osint/gitdorks.txt
 
@@ -1327,7 +1340,7 @@ function CMSeek(){
 	if [[ $CMS_SECURITY == "true" ]]; then
 		echo "Cms SEc start"
 		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
-		#interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "python3 $tools/CMSeeK/cmseek.py -u _target_ --follow-redirect --random-agent" -v
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "python3 $tools/CMSeeK/cmseek.py -u _target_ --follow-redirect --random-agent" -v
 		
 		#cat cms.json | jq ".cms_id" | tr -d '"'
 		for dirlist in $(ls $tools/CMSeeK/Result/)
@@ -1360,7 +1373,7 @@ function openreditrct(){
 
 function x4xxbypass(){
 
-	cat $recon_dir/$target_domain/fuzzing/*.txt | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | dirdar -threads 5 -only-ok > $recon_dir/$target_domain/.tmp/dirdar.txt
+	cat $recon_dir/$target_domain/fuzzing/*.txt | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | dirdar -only-ok > $recon_dir/$target_domain/.tmp/dirdar.txt
 	cat $recon_dir/$target_domain/.tmp/dirdar.txt | sed -e '1,12d' | sed '/^$/d' | anew -q $recon_dir/$target_domain/vulns/4xxbypass.txt
 }
 
@@ -1379,9 +1392,9 @@ function init(){ # инициализация разведки на основе
 	if [[ -n $install_tools ]]; then
 		install_tools
 	fi
-	#check_tools
-	#tools_update_resurce
-	#preliminary_actions
+	check_tools
+	tools_update_resurce
+	preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
 		SubRresult
