@@ -27,6 +27,18 @@ function help(){
 	echo "  -v, --version				reconWTF version "
 	echo "  -h, --help 				help"
 	echo ""
+	echo "Remember set your api keys:"
+	echo ""
+	echo "subfinder 		|		(~/.config/subfinder/config.yaml)"
+	echo "amass 			|		(~/.config/amass/config.ini)"
+	echo "GitHub 			|		(~/Tools/.github_tokens)"
+	echo "SHODAN 			|		(SHODAN_API_KEY in reconftw.cfg)"
+	echo "SSRF Server 		|		(COLLAB_SERVER in reconftw.cfg)"
+	echo "Blind XSS Server 	|		(XSS_SERVER in reconftw.cfg) "
+	echo "theHarvester 		|		(~/Tools/theHarvester/api-keys.yml)"
+	echo "H8mail 			|		(~/Tools/h8mail_config.ini)"
+	echo "sigurlfind3r 		|		(~/.config/sigurlfind3r/conf.yaml)"
+	echo ""
 	exit
 }
 
@@ -731,6 +743,23 @@ function preliminary_actions(){ # предварительные действи�
 		echo "dnsvalidator gen dnsresolver true"
 		exec dnsvalidator \--no-color \-threads $DNS_VALIDATION_THREADS \-o $tools/wordlist/resolvers.txt &> /dev/null
 	fi
+		if [ -e $recon_dir/README.md ]; then 
+			 echo ""
+		else
+			touch $recon_dir/README.md
+		fi
+		if [ -e $recon_dir/$target_domain/README.md ]; then 
+			 echo ""
+		else
+			touch $recon_dir/$target_domain/README.md
+		fi
+
+		if [ -f $recon_dir/$target_domain/CheckList.md ]; then
+			echo ""
+		else
+			curl https://raw.githubusercontent.com/solo10010/Bagbounty_resources/main/checklist/README.md > $recon_dir/$target_domain/CheckList.md
+		fi
+	
 
 	# создаем нужные директории если их нет. если есть не создаем
 	if ! [ -d $recon_dir/$target_domain/ ]; then
@@ -753,6 +782,7 @@ function preliminary_actions(){ # предварительные действи�
 		mkdir -p $recon_dir/$target_domain/scan/header_sec
 		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
 		mkdir -p $recon_dir/$target_domain/cidr
+		mkdir -p $recon_dir/$target_domain/pentests
 
 		cd $recon_dir/$target_domain # переходим в папку рекона
 	else
@@ -1209,6 +1239,18 @@ function header_sec(){
 	fi
 }
 
+function header_grep(){
+	
+	if [[ $HEADER_GREP == "true" ]]; then
+		echo " start header grep "
+		mkdir -p $recon_dir/$target_domain/scan/header
+		cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | egrep -o '[a-z0-9.-]*[:][0-9]*$' > $recon_dir/$target_domain/.tmp/header_grep.txt
+		interlace -tL $recon_dir/$target_domain/.tmp/header_grep.txt -threads 5 -c "curl -A '$HEADER' -I _target_  -o $recon_dir/$target_domain/scan/header/_target_.txt" -v
+	else
+		echo "header grep false"
+	fi
+}
+
 function webtehnologies(){
 	if [[ $CHECK_WEBTEHNOLOGIES == "true" ]]; then
 		echo " start check webtechnologies"
@@ -1383,6 +1425,254 @@ function clearempity(){
 	find . -type d -empty -exec rmdir {} \;
 }
 
+function archive_scan(){
+	if [ -d $recon_dir/$target_domain/archive ]; then
+		# получаем и заполняем количество
+		date=$(date +"%Y.%m.%d.%k")
+
+		date_achive_scan=$(cat $recon_dir/$target_domain/archive/date.txt)
+		
+		echo "# $target_domain : $date_achive_scan : $date" > $recon_dir/$target_domain/README.md # очищаем readme для новых данных
+		echo " " >> $recon_dir/$target_domain/README.md
+
+		# попробуем забить циклом
+		echo "| $target_domain | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+		echo "|----------------|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+
+		# Массив директорий
+
+		arr[0]=cidr
+  		arr[1]=fuzzing
+		arr[2]=gf
+		arr[3]=hosts
+		arr[4]=js
+		arr[5]=osint
+		arr[6]=subdomain
+		arr[7]=vulns
+		arr[8]=webs
+		arr[9]=scan/nuclei_output/
+		arr[10]=scan/webtechnologies/
+		#arr[11]=hosts/testssl/
+
+		arr2[0]=screenshots/
+		arr2[1]=js/jsfile/
+		arr2[2]=scan/header_sec/
+		arr2[3]=scan/CMSeeK/
+
+		for item in ${arr[*]}
+		do
+			
+			for i in $(ls -1 -R $item)
+			do
+				in=$(echo $i | grep -i ":$")
+				if [[ $i == $in && $(echo $i | grep -io "jsfile") != "jsfile" ]]; then
+					echo " " >> $recon_dir/$target_domain/README.md
+					echo "| $in | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+					echo "|-----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+				else
+					if [[ $(echo $i) == $(echo $i | grep "\.txt") || $(echo $i | grep "jsfile") != $(echo $i | grep "jsfile") ]]; then
+						dir=$(cd $item && pwd)
+						dir_al_path=$(echo "$dir/$i")
+
+						dir_a=$(cd archive/$item && pwd)
+						dir_al_path_archive=$(echo "$dir_a/$i")
+						
+						if [[ -f $dir_al_path ]]; then
+							count_file1="$(cat $dir_al_path | wc -l)"
+							count_file2="$(cat $dir_al_path_archive | wc -l)"
+							echo "| $i | $count_file1 | $count_file2 |" >> $recon_dir/$target_domain/README.md
+						fi
+					
+					fi
+				fi
+			done
+
+		done	
+
+		for item2 in ${arr2[*]}
+		do
+			dir_path2=$(ls $recon_dir/$target_domain/$item2 | wc -l)
+			dir_path2_archive=$(ls $recon_dir/$target_domain/$item2 | wc -l)
+
+			echo " " >> $recon_dir/$target_domain/README.md
+			echo "| $item2 | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+			echo "|--------|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+
+			echo "| File count | $dir_path2 | $dir_path2_archive |" >> $recon_dir/$target_domain/README.md
+
+		done	
+		
+
+		# начинаем сравнивать через diff
+
+		echo " " >> $recon_dir/$target_domain/README.md
+		echo " " >> $recon_dir/$target_domain/README.md
+		echo "# diff scaner : $date_achive_scan : $date " >> $recon_dir/$target_domain/README.md
+		echo " " >> $recon_dir/$target_domain/README.md
+		echo " " >> $recon_dir/$target_domain/README.md
+
+		for item in ${arr[*]}
+		do
+			for i in $(ls -1 -R $item)
+			do
+
+				echo " " >> $recon_dir/$target_domain/README.md
+				dir=$(cd $item && pwd)
+				dir_al_path=$(echo "$dir/$i")
+
+				dir_a=$(cd archive/$item && pwd)
+				dir_al_path_archive=$(echo "$dir_a/$i")
+						
+				if [[ -f $dir_al_path ]]; then
+					echo " " >> $recon_dir/$target_domain/README.md
+					count_file1="$(diff $dir_al_path $dir_al_path_archive)"
+					#count_file2="$(cat $dir_al_path_archive | wc -l)"
+					if [[ $count_file1 == "" ]];then
+						echo "" > /dev/null
+					else
+								
+						echo "| $i | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+						echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+						echo " " >> $recon_dir/$target_domain/README.md
+						echo '```bash ' >> $recon_dir/$target_domain/README.md
+						echo " $count_file1 " >> $recon_dir/$target_domain/README.md
+						echo '``` ' >> $recon_dir/$target_domain/README.md
+					fi
+				fi
+			done
+
+		done
+
+		for item2 in $(ls $recon_dir/$target_domain/js/jsfile)
+		do
+			js_file=$(cd $recon_dir/$target_domain/js/jsfile/$item2 && ls)
+			for i in $js_file
+			do	
+				diff_to_js=$(diff $recon_dir/$target_domain/js/jsfile/$item2/$i $recon_dir/$target_domain/archive/js/jsfile/$item2/$i)
+				if [[ $diff_to_js == "" ]]; then
+					echo "" > /dev/null
+				else
+
+					echo "| $i | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+					echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+					echo " " >> $recon_dir/$target_domain/README.md
+					echo '```bash ' >> $recon_dir/$target_domain/README.md
+					echo " $diff_to_js " >> $recon_dir/$target_domain/README.md
+					echo '``` ' >> $recon_dir/$target_domain/README.md
+				fi
+
+			done
+
+		done
+	
+		diff_to_imge=$(diff $recon_dir/$target_domain/screenshots $recon_dir/$target_domain/archive/screenshots)
+		if [[ $diff_to_imge == "" ]]; then
+			echo "" > /dev/null
+		else
+			echo " " >> $recon_dir/$target_domain/README.md
+			echo "| screenshots | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+			echo "|-------------|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+			echo " " >> $recon_dir/$target_domain/README.md
+			echo '```bash ' >> $recon_dir/$target_domain/README.md
+			echo " $diff_to_imge " >> $recon_dir/$target_domain/README.md
+			echo '``` ' >> $recon_dir/$target_domain/README.md
+		fi
+
+		# вшатываем папку архива и заново забиваем
+
+
+		rm -r $recon_dir/$target_domain/archive/cidr
+		rm -r $recon_dir/$target_domain/archive/fuzzing
+		rm -r $recon_dir/$target_domain/archive/gf
+		rm -r $recon_dir/$target_domain/archive/hosts
+		rm -r $recon_dir/$target_domain/archive/js
+		rm -r $recon_dir/$target_domain/archive/osint
+		rm -r $recon_dir/$target_domain/archive/scan
+		rm -r $recon_dir/$target_domain/archive/screenshots
+		rm -r $recon_dir/$target_domain/archive/subdomain
+		rm -r $recon_dir/$target_domain/archive/vulns
+		rm -r $recon_dir/$target_domain/archive/webs
+
+		mkdir -p $recon_dir/$target_domain/archive
+
+		cp -r $recon_dir/$target_domain/cidr $recon_dir/$target_domain/archive/cidr
+		cp -r $recon_dir/$target_domain/fuzzing $recon_dir/$target_domain/archive/fuzzing
+		cp -r $recon_dir/$target_domain/gf $recon_dir/$target_domain/archive/gf
+		cp -r $recon_dir/$target_domain/hosts $recon_dir/$target_domain/archive/hosts
+		cp -r $recon_dir/$target_domain/js $recon_dir/$target_domain/archive/js
+		cp -r $recon_dir/$target_domain/osint $recon_dir/$target_domain/archive/osint
+		cp -r $recon_dir/$target_domain/scan $recon_dir/$target_domain/archive/scan
+		cp -r $recon_dir/$target_domain/screenshots $recon_dir/$target_domain/archive/screenshots
+		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
+		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
+		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
+
+		date=$(date +"%Y.%m.%d.%k")
+		touch $recon_dir/$target_domain/archive/date.txt
+		echo "$date" > $recon_dir/$target_domain/archive/date.txt
+
+	else
+		
+		# создем архив
+		mkdir $recon_dir/$target_domain/archive
+
+		cp -r $recon_dir/$target_domain/cidr $recon_dir/$target_domain/archive/cidr
+		cp -r $recon_dir/$target_domain/fuzzing $recon_dir/$target_domain/archive/fuzzing
+		cp -r $recon_dir/$target_domain/gf $recon_dir/$target_domain/archive/gf
+		cp -r $recon_dir/$target_domain/hosts $recon_dir/$target_domain/archive/hosts
+		cp -r $recon_dir/$target_domain/js $recon_dir/$target_domain/archive/js
+		cp -r $recon_dir/$target_domain/osint $recon_dir/$target_domain/archive/osint
+		cp -r $recon_dir/$target_domain/scan $recon_dir/$target_domain/archive/scan
+		cp -r $recon_dir/$target_domain/screenshots $recon_dir/$target_domain/archive/screenshots
+		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
+		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
+		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
+		# gf hosts js osint scan screenshots subdomain  vulns webs
+
+		date=$(date +"%Y.%m.%d.%k")
+		touch $recon_dir/$target_domain/archive/date.txt
+		echo "$date" > $recon_dir/$target_domain/archive/date.txt
+
+	fi
+}
+
+function archive_md_lists(){
+
+	date=$(date +"%Y.%m.%d.%k")
+
+	mkdir -p $recon_dir/$target_domain/archive/back_md
+	mkdir -p $recon_dir/$target_domain/archive/back_md/$date
+	cp $recon_dir/$target_domain/README.md $recon_dir/$target_domain/archive/back_md/$date/README.md
+	cp $recon_dir/$target_domain/CheckList.md $recon_dir/$target_domain/archive/back_md/$date/CheckList.md
+
+}
+
+function github_get_private_scan(){
+	if [[ $git_add == "true" ]]; then
+		if [ -f $recon_dir/.git/index ]; then
+			cd $recon_dir
+			date=$(date)
+			echo "**/.tmp" > .gitignore
+			git add .
+			git commit -m "$date"
+			git push  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
+			cd $reconwtf_dir
+		else
+			cd $recon_dir
+			git init
+			touch .gitignore
+			echo "**/.tmp" > .gitignore
+			git remote add origin https://github.com/$you_git_username/$private_git_repos_name.git
+			git add .
+			git commit -m "private recon repo init"
+			git push  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
+			cd $reconwtf_dir
+		fi
+	else
+		echo "No push recon result to github repositories"
+	fi
+}
+
 
 
 function init(){ # инициализация разведки на основе введенных параметров
@@ -1392,8 +1682,8 @@ function init(){ # инициализация разведки на основе
 	if [[ -n $install_tools ]]; then
 		install_tools
 	fi
-	check_tools
-	tools_update_resurce
+	#check_tools
+	#tools_update_resurce
 	preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
@@ -1428,6 +1718,7 @@ function init(){ # инициализация разведки на основе
 		ip2provider
 		nuclei_check
 		header_sec
+		header_grep
 		webtehnologies
 		fuzzing
 		url_gf
@@ -1442,41 +1733,42 @@ function init(){ # инициализация разведки на основе
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
 		
-		Subdomain_enum_passive
-		Subdomain_enum
-		subdomain_permytation
-		subdomain_bruteforce
-		SubRresult
-		webs
-		zonetransfer_takeovers
-		s3bucket
-		scan_hosts
-		visual_indentification
-		endpoint_enum_passive
-		endpoint_enum_agressive
-		jsfind
-		checkWAF
-		ips
-		cidr_recon
-		testssl
-		scan_port
-		ip2provider
-		nuclei_check
-		header_sec
-		webtehnologies
-		fuzzing
+		#Subdomain_enum_passive
+		#Subdomain_enum
+		#subdomain_permytation
+		#subdomain_bruteforce
+		#SubRresult
+		#webs
+		#zonetransfer_takeovers
+		#s3bucket
+		#scan_hosts
+		#visual_indentification
+		#endpoint_enum_passive
+		#endpoint_enum_agressive
+		#jsfind
+		#checkWAF
+		#ips
+		#cidr_recon
+		#testssl
+		#scan_port
+		#ip2provider
+		#nuclei_check
+		#header_sec
+		#header_grep
+		#webtehnologies
+		#fuzzing
 		url_gf
-		url_ext_file
-		domain_info
-		emaifind
-		google_dorks
-		github_dorks
-		metadata
-		cors
-		openreditrct
-		x4xxbypass
-		CMSeek
-		clearempity
+		#url_ext_file
+		#domain_info
+		#emaifind
+		#google_dorks
+		#github_dorks
+		#metadata
+		#cors
+		#openreditrct
+		#x4xxbypass
+		#CMSeek
+		#clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
@@ -1500,6 +1792,10 @@ function init(){ # инициализация разведки на основе
 		clearempity
 
 	fi
+	
+	archive_scan
+	archive_md_lists
+	github_get_private_scan
 }
 
 init # запуск главной функции

@@ -109,6 +109,13 @@ cat scope_domain.txt
 ```bash
 ./reconwtf.sh -h
 ```
+**Upload intelligence to github**
+
+* create a repository called recon
+* Get a github token
+* fill in your config.conf file with this information
+* Start checking the repository initializes itself
+
 
 # UTILITES AND RECONNAISSANCE METHODS USED
 
@@ -190,15 +197,15 @@ cat scope.txt
 # TO BE DONE
 
 - [x] improve documentation
-- [ ] Make it possible to save the scan result to a private repository on github
-- [ ] The ability to create or download a checklist to help the pentester
+- [x] Make it possible to save the scan result to a private repository on github
+- [x] The ability to create or download a checklist to help the pentester
 - [ ] exploration of company acquisitions
-- [ ] Test the script on other operating systems including on the server
+- [x] Test the script on other operating systems including on the server
 - [ ] Add bbrf support
 - [x] make the installation script one with the main script
 - [ ] Add burp proxy support
 - [x] make a separate key to check installed utilities
-- [ ] Add a way to check the current scan with the previous one and detect what has changed
+- [x] Add a way to check the current scan with the previous one and detect what has changed
 - [ ] Add scan status notifications to ntfy.sh
 - [ ] Add feature to scan github repositories
 - [ ] Add a function to scan a list of domains specifying the name of the scan
