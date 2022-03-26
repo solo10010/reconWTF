@@ -1682,8 +1682,8 @@ function init(){ # инициализация разведки на основе
 	if [[ -n $install_tools ]]; then
 		install_tools
 	fi
-	#check_tools
-	#tools_update_resurce
+	check_tools
+	tools_update_resurce
 	preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
@@ -1733,42 +1733,42 @@ function init(){ # инициализация разведки на основе
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
 		
-		#Subdomain_enum_passive
-		#Subdomain_enum
-		#subdomain_permytation
-		#subdomain_bruteforce
-		#SubRresult
-		#webs
-		#zonetransfer_takeovers
-		#s3bucket
-		#scan_hosts
-		#visual_indentification
-		#endpoint_enum_passive
-		#endpoint_enum_agressive
-		#jsfind
-		#checkWAF
-		#ips
-		#cidr_recon
-		#testssl
-		#scan_port
-		#ip2provider
-		#nuclei_check
-		#header_sec
-		#header_grep
-		#webtehnologies
-		#fuzzing
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		webs
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts
+		visual_indentification
+		endpoint_enum_passive
+		endpoint_enum_agressive
+		jsfind
+		checkWAF
+		ips
+		cidr_recon
+		testssl
+		scan_port
+		ip2provider
+		nuclei_check
+		header_sec
+		header_grep
+		webtehnologies
+		fuzzing
 		url_gf
-		#url_ext_file
-		#domain_info
-		#emaifind
-		#google_dorks
-		#github_dorks
-		#metadata
-		#cors
-		#openreditrct
-		#x4xxbypass
-		#CMSeek
-		#clearempity
+		url_ext_file
+		domain_info
+		emaifind
+		google_dorks
+		github_dorks
+		metadata
+		cors
+		openreditrct
+		x4xxbypass
+		CMSeek
+		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
