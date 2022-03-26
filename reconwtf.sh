@@ -27,17 +27,17 @@ function help(){
 	echo "  -v, --version				reconWTF version "
 	echo "  -h, --help 				help"
 	echo ""
-	echo "Remember set your api keys:"
+	echo "  Remember set your api keys:"
 	echo ""
-	echo "subfinder 		|		(~/.config/subfinder/config.yaml)"
-	echo "amass 			|		(~/.config/amass/config.ini)"
-	echo "GitHub 			|		(~/Tools/.github_tokens)"
-	echo "SHODAN 			|		(SHODAN_API_KEY in reconftw.cfg)"
-	echo "SSRF Server 		|		(COLLAB_SERVER in reconftw.cfg)"
-	echo "Blind XSS Server 	|		(XSS_SERVER in reconftw.cfg) "
-	echo "theHarvester 		|		(~/Tools/theHarvester/api-keys.yml)"
-	echo "H8mail 			|		(~/Tools/h8mail_config.ini)"
-	echo "sigurlfind3r 		|		(~/.config/sigurlfind3r/conf.yaml)"
+	echo "  subfinder 		|		(~/.config/subfinder/config.yaml)"
+	echo "  amass 		|		(~/.config/amass/config.ini)"
+	echo "  GitHub 		|		(~/Tools/.github_tokens)"
+	echo "  SHODAN 		|		(SHODAN_API_KEY in reconftw.cfg)"
+	echo "  SSRF Server 		|		(COLLAB_SERVER in reconftw.cfg)"
+	echo "  Blind XSS Server 	|		(XSS_SERVER in reconftw.cfg) "
+	echo "  theHarvester 		|		(~/Tools/theHarvester/api-keys.yml)"
+	echo "  H8mail 		|		(~/Tools/h8mail_config.ini)"
+	echo "  sigurlfind3r 		|		(~/.config/sigurlfind3r/conf.yaml)"
 	echo ""
 	exit
 }
@@ -75,7 +75,7 @@ case $key in
 	    exit
     fi
     ;;
-	    -cidr|--cidr) # диапазон ip цели 192.49,128.0/16
+	-cidr|--cidr) # диапазон ip цели 192.49,128.0/16
     cidr="$2"
     shift # past argument
     shift # past value
@@ -1427,12 +1427,54 @@ function clearempity(){
 
 function archive_scan(){
 	if [ -d $recon_dir/$target_domain/archive ]; then
+		echo "" > $recon_dir/$target_domain/README.md
+
 		# получаем и заполняем количество
 		date=$(date +"%Y.%m.%d.%k")
 
 		date_achive_scan=$(cat $recon_dir/$target_domain/archive/date.txt)
 		
-		echo "# $target_domain : $date_achive_scan : $date" > $recon_dir/$target_domain/README.md # очищаем readme для новых данных
+		# Сохраняем настройки сканирования
+
+		echo "# Parametr scanning $target_domain " >> $recon_dir/$target_domain/README.md
+
+		echo "* Command: $0 -d $target_domain -m $company -cidr $cidr -c $cookie -g $config -x $scope_list" >> $recon_dir/$target_domain/README.md
+
+		if [[ -n $target_domain ]]; then
+			echo "* Target Domain: $target_domain " >> $recon_dir/$target_domain/README.md
+		fi
+		if [[ -n $company ]]; then
+			echo "* Company Name: $company " >> $recon_dir/$target_domain/README.md
+		fi
+		if [[ -n $cidr ]]; then
+			echo "* CIDR: $cidr " >> $recon_dir/$target_domain/README.md
+		fi
+		if [[ -n $cookie ]]; then
+			echo "* Cookies: $cookie " >> $recon_dir/$target_domain/README.md
+		fi
+		if [[ -n $config ]]; then
+			echo "* Config File: $config " >> $recon_dir/$target_domain/README.md
+			
+			cp $reconwtf_dir/$config $recon_dir/$target_domain/archive/back_md/$date/config.conf
+		
+		fi
+		
+		if [[ -n $scope_list ]]; then
+			scpe_listing_red=$(cat $reconwtf_dir/$scope_list)
+			
+			cp $reconwtf_dir/$scope_list $recon_dir/$target_domain/archive/back_md/$date/scope.txt
+			cp $reconwtf_dir/$scope_list $recon_dir/$target_domain/scope.txt
+
+			echo "* Scope File: $scope_list " >> $recon_dir/$target_domain/README.md
+			echo "" >> $recon_dir/$target_domain/README.md
+			echo '```bash' >> $recon_dir/$target_domain/README.md
+			echo "$scpe_listing_red" >> $recon_dir/$target_domain/README.md
+			echo '```' >> $recon_dir/$target_domain/README.md
+		fi
+
+		echo " " >> $recon_dir/$target_domain/README.md
+
+		echo "# $target_domain : $date_achive_scan : $date" >> $recon_dir/$target_domain/README.md # очищаем readme для новых данных
 		echo " " >> $recon_dir/$target_domain/README.md
 
 		# попробуем забить циклом
@@ -1440,6 +1482,8 @@ function archive_scan(){
 		echo "|----------------|-------------------|-------|" >> $recon_dir/$target_domain/README.md
 
 		# Массив директорий
+
+		cd $recon_dir/$target_domain
 
 		arr[0]=cidr
   		arr[1]=fuzzing
@@ -1595,6 +1639,8 @@ function archive_scan(){
 
 		mkdir -p $recon_dir/$target_domain/archive
 
+		mkdir -p $recon_dir/$target_domain/archive/back_md/$date/config_tools
+
 		cp -r $recon_dir/$target_domain/cidr $recon_dir/$target_domain/archive/cidr
 		cp -r $recon_dir/$target_domain/fuzzing $recon_dir/$target_domain/archive/fuzzing
 		cp -r $recon_dir/$target_domain/gf $recon_dir/$target_domain/archive/gf
@@ -1610,6 +1656,15 @@ function archive_scan(){
 		date=$(date +"%Y.%m.%d.%k")
 		touch $recon_dir/$target_domain/archive/date.txt
 		echo "$date" > $recon_dir/$target_domain/archive/date.txt
+
+		# загружаем в архив конфиги
+
+		cp ~/.config/subfinder/config.yaml $recon_dir/$target_domain/archive/back_md/$date/config_tools &> /dev/null
+		cp ~/.config/amass/config.ini $recon_dir/$target_domain/archive/back_md/$date/config_tools &> /dev/null
+		cp ~/.config/sigurlfind3r/conf.yaml $recon_dir/$target_domain/archive/back_md/$date/config_tools &> /dev/null
+		cp $tools/.github_tokens $recon_dir/$target_domain/archive/back_md/$date/config_tools &> /dev/null
+		cp $tools/theHarvester/api-keys.yaml $recon_dir/$target_domain/archive/back_md/$date/config_tools &> /dev/null
+		cp $tools/h8mail_config.ini $recon_dir/$target_domain/archive/back_md/$date/config_tools &> /dev/null
 
 	else
 		
@@ -1634,6 +1689,7 @@ function archive_scan(){
 		echo "$date" > $recon_dir/$target_domain/archive/date.txt
 
 	fi
+	cd $reconwtf_dir
 }
 
 function archive_md_lists(){
@@ -1682,9 +1738,9 @@ function init(){ # инициализация разведки на основе
 	if [[ -n $install_tools ]]; then
 		install_tools
 	fi
-	check_tools
-	tools_update_resurce
-	preliminary_actions
+	#check_tools
+	#tools_update_resurce
+	#preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
 		SubRresult
@@ -1733,42 +1789,42 @@ function init(){ # инициализация разведки на основе
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
 		
-		Subdomain_enum_passive
-		Subdomain_enum
-		subdomain_permytation
-		subdomain_bruteforce
-		SubRresult
-		webs
-		zonetransfer_takeovers
-		s3bucket
-		scan_hosts
-		visual_indentification
-		endpoint_enum_passive
-		endpoint_enum_agressive
-		jsfind
-		checkWAF
-		ips
-		cidr_recon
-		testssl
-		scan_port
-		ip2provider
-		nuclei_check
-		header_sec
-		header_grep
-		webtehnologies
-		fuzzing
+		#Subdomain_enum_passive
+		#Subdomain_enum
+		#subdomain_permytation
+		#subdomain_bruteforce
+		#SubRresult
+		#webs
+		#zonetransfer_takeovers
+		#s3bucket
+		#scan_hosts
+		#visual_indentification
+		#endpoint_enum_passive
+		#endpoint_enum_agressive
+		#jsfind
+		#checkWAF
+		#ips
+		#cidr_recon
+		#testssl
+		#scan_port
+		#ip2provider
+		#nuclei_check
+		#header_sec
+		#header_grep
+		#webtehnologies
+		#fuzzing
 		url_gf
-		url_ext_file
-		domain_info
-		emaifind
-		google_dorks
-		github_dorks
-		metadata
-		cors
-		openreditrct
-		x4xxbypass
-		CMSeek
-		clearempity
+		#url_ext_file
+		#domain_info
+		#emaifind
+		#google_dorks
+		#github_dorks
+		#metadata
+		#cors
+		#openreditrct
+		#x4xxbypass
+		#CMSeek
+		#clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
