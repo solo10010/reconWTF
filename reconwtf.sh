@@ -2190,7 +2190,7 @@ MULTILINE-COMMENT
 		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		<< 'MULTILINE-COMMENT'
+		
 		Subdomain_enum_passive
 		Subdomain_enum
 		subdomain_permytation
@@ -2228,8 +2228,6 @@ MULTILINE-COMMENT
 		x4xxbypass
 		CMSeek
 		clearempity
-MULTILINE-COMMENT
-url_gf
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
