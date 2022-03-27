@@ -735,6 +735,12 @@ printf "\n\n${bgreen}###########################################################
 
 #exit
 
+# пример многострочного коментария
+
+<< 'MULTILINE-COMMENT'
+
+MULTILINE-COMMENT
+
 }
 
 
@@ -1833,6 +1839,7 @@ function archive_scan(){
 		arr[8]=webs
 		arr[9]=scan/nuclei_output/
 		arr[10]=scan/webtechnologies/
+		arr[11]=directories
 		#arr[11]=hosts/testssl/
 
 		arr2[0]=screenshots/
@@ -2128,6 +2135,10 @@ function init(){ # инициализация разведки на основе
 	if [[ -n $install_tools ]]; then
 		install_tools
 	fi
+	<< 'MULTILINE-COMMENT'
+
+MULTILINE-COMMENT
+
 	#check_tools
 	#tools_update_resurce
 	preliminary_actions
@@ -2179,7 +2190,7 @@ function init(){ # инициализация разведки на основе
 		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		
+		<< 'MULTILINE-COMMENT'
 		Subdomain_enum_passive
 		Subdomain_enum
 		subdomain_permytation
@@ -2217,6 +2228,8 @@ function init(){ # инициализация разведки на основе
 		x4xxbypass
 		CMSeek
 		clearempity
+MULTILINE-COMMENT
+url_gf
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
