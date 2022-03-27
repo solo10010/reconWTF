@@ -2139,8 +2139,8 @@ function init(){ # инициализация разведки на основе
 
 MULTILINE-COMMENT
 
-	#check_tools
-	#tools_update_resurce
+	check_tools
+	tools_update_resurce
 	preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
