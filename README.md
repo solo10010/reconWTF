@@ -206,7 +206,7 @@ cat scope.txt
 - [ ] Add burp proxy support
 - [x] make a separate key to check installed utilities
 - [x] Add a way to check the current scan with the previous one and detect what has changed
-- [ ] Add scan status notifications to ntfy.sh
+- [x] Add scan status notifications to ntfy.sh
 - [ ] Add feature to scan github repositories
 - [ ] Add a function to scan a list of domains specifying the name of the scan
 - [ ] Add a function to scan the list of ip addresses and ranges

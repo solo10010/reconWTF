@@ -297,6 +297,8 @@ function check_tools(){
 	type -P python3 &>/dev/null || { printf "${bred} [*] python3	[NO]${reset}\n"; allinstalled=false;}
 	type -P pip3 &>/dev/null || { printf "${bred} [*] pip3	[NO]${reset}\n"; allinstalled=false;}
 	type -P hakrevdns &>/dev/null || { printf "${bred} [*] hakrevdns	[NO]${reset}\n"; allinstalled=false;}
+	type -P gobuster &>/dev/null || { printf "${bred} [*] gobuster	[NO]${reset}\n"; allinstalled=false;}
+	
 
 	if [ "${allinstalled}" = true ]; then
 		printf "${bgreen} Good! All installed! ${reset}\n\n"
@@ -365,6 +367,8 @@ function install_tools(){
 	gotools["urlhunter"]="go install -v github.com/utkusen/urlhunter@latest"
 	gotools["sigurlfind3r"]="go install -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r@latest"
 	gotools["hakrevdns"]="go install -v github.com/hakluke/hakrevdns@latest"
+	gotools["gobuster"]="go install github.com/OJ/gobuster/v3@latest"
+	
 
 	declare -A repos
 	repos["degoogle_hunter"]="six2dez/degoogle_hunter"
@@ -672,7 +676,7 @@ mkdir -p wordlist
 mkdir -p single-tools
 
 eval wget -nc -O wordlist/subdomains_big.txt https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt $DEBUG_STD
-
+eval wget -nc -O wordlist/dir_list_smal.txt https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-small.txt $DEBUG_STD
 ## Last check
 if [ "$double_check" = "true" ]; then
     printf "${bblue} Running: Double check for installed tools ${reset}\n\n"
@@ -759,6 +763,11 @@ function preliminary_actions(){ # предварительные действи�
 		else
 			curl https://raw.githubusercontent.com/solo10010/Bagbounty_resources/main/checklist/README.md > $recon_dir/$target_domain/CheckList.md
 		fi
+			if [ -f $recon_dir/$target_domain/notes.md  ]; then
+			echo ""
+		else
+			curl https://raw.githubusercontent.com/solo10010/Bagbounty_resources/main/checklist/notes.md > $recon_dir/$target_domain/notes.md
+		fi
 	
 
 	# создаем нужные директории если их нет. если есть не создаем
@@ -782,7 +791,8 @@ function preliminary_actions(){ # предварительные действи�
 		mkdir -p $recon_dir/$target_domain/scan/header_sec
 		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
 		mkdir -p $recon_dir/$target_domain/cidr
-		mkdir -p $recon_dir/$target_domain/pentests
+		mkdir -p $recon_dir/$target_domain/notes
+		mkdir -p $recon_dir/$target_domain/directories
 
 		cd $recon_dir/$target_domain # переходим в папку рекона
 	else
@@ -800,6 +810,8 @@ function preliminary_actions(){ # предварительные действи�
 	else
 		echo " "
 	fi
+
+	
 
 	# обнуляем debug
 	echo "start recon to ${target_domain}" > $recon_dir/$target_domain/.tmp/debug
@@ -820,6 +832,21 @@ function SubRresult(){
 	cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | egrep "\.$target_domain" | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
 	echo "$target_domain" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
 	scope_domain
+
+	# ntfy
+	if [[ $ntfy_end_modules == "true" ]]; then
+		
+		ntfy_count1=$(cat $recon_dir/$target_domain/subdomain/subdomains.txt | wc -l)
+		ntfy_count2=$(cat $recon_dir/$target_domain/archive/subdomain/subdomains.txt | wc -l)
+
+		curl \
+		-H "Title: $ntfy_title subdomain result! $(date +'%Y.%m.%d.%k')" \
+		-H "Priority: $ntfy_priority" \
+		-H "Tags: $ntfy_tags" \
+		-d "Scan Result Collected quantity: $ntfy_count1 It was before: $ntfy_count2 " \
+		$ntfy
+	fi
+
 }
 
 function Subdomain_enum_passive(){
@@ -831,6 +858,7 @@ function Subdomain_enum_passive(){
 				echo "запускается cert"
 				python3 $tools/ctfr/ctfr.py -d $target_domain | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | anew $recon_dir/$target_domain/.tmp/cert_subdomains.txt &>>"$DEBUG_FILE"
 			fi
+
 
 	fi
 
@@ -942,6 +970,17 @@ function zonetransfer_takeovers(){
 		echo " --= zonetransfer takeovers =--"
 		python3 $tools/dnsrecon/dnsrecon.py -d $target_domain -a -j $recon_dir/$target_domain/subdomain/zonetransfer.json &>> $DEBUG_FILE
 		cat $recon_dir/$target_domain/webs/webs.txt | nuclei -silent -t ~/nuclei-templates/takeovers/ -r $dns_resolver -o $recon_dir/$target_domain/subdomain/subtakeover.txt &>> $DEBUG_FILE
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title zonetransfer_takeovers scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result zonetransfer_takeovers done " \
+			$ntfy
+		fi
+
 	else
 		echo "zonetransfer false"
 	fi
@@ -970,6 +1009,17 @@ function s3bucket(){
 		python3 $tools/cloud_enum/cloud_enum.py -k $keyword -k $target_domain -qs -l $recon_dir/$target_domain/.tmp/output_cloud.txt
 		cat $recon_dir/$target_domain/.tmp/output_cloud.txt | sed '/^#/d' | sed '/^$/d' | anew $recon_dir/$target_domain/subdomain/cloud_assets.txt
 		cat $recon_dir/$target_domain/.tmp/s3buckets.txt | anew $recon_dir/$target_domain/subdomain/s3buckets.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title s3bucket scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result s3bucket done " \
+			$ntfy
+		fi
+	
 	else
 		echo " s3bucket false"
 	fi
@@ -985,6 +1035,16 @@ function scan_hosts(){
 		cat $recon_dir/$target_domain/subdomain/subdomains.txt | naabu -silent -p $SCAN_HOST_NAABO_WEBPROBE > $recon_dir/$target_domain/webs/webs_ucommon_ports.txt 
 		cat $recon_dir/$target_domain/webs/webs_ucommon_ports.txt | httprobe -prefer-https > $recon_dir/$target_domain/webs/webs_uncommon_ports.txt
 		rm $recon_dir/$target_domain/webs/webs_ucommon_ports.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title scan_hosts scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result scan_hosts done " \
+			$ntfy
+		fi
 	else
 		echo " scan host false"
 	fi
@@ -994,6 +1054,17 @@ function visual_indentification(){
 	if [[ $WEB_VISUAL_INDENTIFICATION == "true" ]]; then
 		echo " start visual indentification "
 		python3 $tools/webscreenshot/webscreenshot.py -i $recon_dir/$target_domain/webs/webs_uncommon_ports.txt --no-error-file -r chromium --no-xserver
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title visual_indentification scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result visual_indentification done " \
+			$ntfy
+		fi
+
 	else
 		echo " visual indintification false "
 	fi
@@ -1006,6 +1077,20 @@ function scope_endpoint(){
 		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt | egrep -Eoi "(http|https)://[a-zA-Z0-9./?=_%:-]*" | egrep -i -f $scope_list > $recon_dir/$target_domain/webs/url_extract.txt
 	else
 		cat $recon_dir/$target_domain/.tmp/endpoint_extract.txt | egrep -Eoi "(http|https)://[a-zA-Z0-9./?=_%:-]*" > $recon_dir/$target_domain/webs/url_extract.txt
+	fi
+
+	# ntfy
+	if [[ $ntfy_end_modules == "true" ]]; then
+		
+		ntfy_count1=$(cat $recon_dir/$target_domain/webs/url_extract.txt | wc -l)
+		ntfy_count2=$(cat $recon_dir/$target_domain/archive/webs/url_extract.txt | wc -l)
+
+		curl \
+		-H "Title: $ntfy_title endpoint result! $(date +'%Y.%m.%d.%k')" \
+		-H "Priority: $ntfy_priority" \
+		-H "Tags: $ntfy_tags" \
+		-d "Scan Result Collected quantity: $ntfy_count1 It was before: $ntfy_count2 " \
+		$ntfy
 	fi
 }
 
@@ -1039,10 +1124,34 @@ function endpoint_enum_agressive(){
 			cat $recon_dir/$target_domain/webs/url_extract.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q $recon_dir/$target_domain/webs/dict_words.txt
 			cat $recon_dir/$target_domain/webs/url_extract.txt | tr "[:punct:]" "\n" | anew -q $recon_dir/$target_domain/webs/dict_words.txt
 		fi
+		if [[ $ENDP_ALLOW_HTTPX == "true" ]]; then
+			cat $recon_dir/$target_domain/webs/url_extract.txt | httpx -random-agent -t 100 -nc -fr -maxr 2 -fhr -maxhr 10 --silent -sc -cl -ct -title -server -td -method -websocket -cname -cdn -probe | anew $recon_dir/$target_domain/webs/allow_url_extract.txt
+		fi
 	else
 		echo " enpoint enum false "
 	fi
 }
+
+function dirbuster(){
+
+	if [[ $DIR_ENUM_GENERAL == "true" ]]; then
+		mkdir -p $recon_dir/$target_domain/directories
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "gobuster dir -w $tools/wordlist/dir_list_smal.txt --url _target_ --follow-redirect --status-codes-blacklist '404, 400, 526, 502, 503' --expanded --wildcard --random-agent --no-tls-validation --quiet -o $recon_dir/$target_domain/directories/_target_.txt" -v
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title dirbuster scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result dirbuster done " \
+			$ntfy
+		fi
+	else
+		echo " dir enum false "
+	fi
+}
+
 
 function jsfind(){
 	if [[ $JS_GENERAL == "true" ]]; then
@@ -1121,6 +1230,16 @@ function jsfind(){
 				done
 			interlace -tL $recon_dir/$target_domain/js/live_waybackjs_link.txt -threads $IN_JS_SECRET_FIND -c "python3 $tools/SecretFinder/SecretFinder.py -i _target_ -o cli >> $recon_dir/$target_domain/js/waybackjs_link_srcrets.txt" -v
 		fi
+
+			if [[ $ntfy_end_modules == "true" ]]; then
+
+				curl \
+				-H "Title: $ntfy_title Javascript scan result!" \
+				-H "Priority: $ntfy_priority" \
+				-H "Tags: $ntfy_tags" \
+				-d "Scan Result JavaScrit done " \
+				$ntfy
+			fi
 	else
 		echo "js find false"
 	fi
@@ -1131,6 +1250,17 @@ function checkWAF(){
 		echo "start check WAF"
 		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads 5 -c "wafw00f  _target_ >> $recon_dir/$target_domain/.tmp/wafw00f.txt" -v
 		cat $recon_dir/$target_domain/.tmp/wafw00f.txt | grep "The site" | anew $recon_dir/$target_domain/hosts/waf.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title checkWAF scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result checkWAF done " \
+			$ntfy
+		fi
+
 	else
 		echo "check WAF false"
 	fi
@@ -1149,6 +1279,17 @@ function ips(){
 		cat $recon_dir/$target_domain/hosts/sub_ips_v6.txt | egrep -o "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))" | anew $recon_dir/$target_domain/hosts/ips_v6.txt
 
 		cat $recon_dir/$target_domain/hosts/ips_v4.txt $recon_dir/$target_domain/hosts/ips_v6.txt | anew $recon_dir/$target_domain/hosts/ips.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title ips scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result ips done " \
+			$ntfy
+		fi
+	
 	else
 		echo "IPS false "
 	fi
@@ -1175,6 +1316,15 @@ function cidr_recon(){
 
 	ports=$(cat $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt | naabu -silent -p $SCAN_PORT_NAABU_PORTS_LIST | cut -d ':' -f 2 | anew |  tr '\n' ',' | sed s/,$//) && nmap -iL $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt -p $ports -sV -Pn -sC --script='vulners, http-waf-detect, http-security-headers, dns-zone-transfer, http-cross-domain-policy, http-title, whois-ip' --script-args='mincvss=5.0' -oA $recon_dir/$target_domain/cidr/nmap/nmap_scan --stylesheet https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
 
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title cidr_recon scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result cidr_recon done " \
+			$ntfy
+		fi
 
 }
 
@@ -1184,6 +1334,17 @@ function testssl(){
 		echo "start TESTSSL "
 		mkdir $recon_dir/$target_domain/hosts/testssl
 		interlace -tL $recon_dir/$target_domain/hosts/ips.txt -threads 5 -c "$tools/testssl/testssl.sh --quiet --color 0 -U --warnings=batch _target_ >> $recon_dir/$target_domain/hosts/testssl/_target_.txt" -v
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title testssl scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result testssl done " \
+			$ntfy
+		fi
+	
 	else
 		echo "test SSL false"
 	fi
@@ -1194,6 +1355,17 @@ function scan_port(){
 		echo "start scan port"
 		mkdir -p $recon_dir/$target_domain/scan/nmap
 		ports=$(cat $recon_dir/$target_domain/hosts/ips_v4.txt | naabu -silent -p $SCAN_PORT_NAABU_PORTS_LIST | cut -d ':' -f 2 | anew |  tr '\n' ',' | sed s/,$//) && nmap -iL $recon_dir/$target_domain/hosts/ips_v4.txt -p $ports -sV -Pn -sC --script='vulners, http-waf-detect, http-security-headers, dns-zone-transfer, http-cross-domain-policy, http-title, whois-ip' --script-args='mincvss=5.0' -oA $recon_dir/$target_domain/scan/nmap/$target_domain --stylesheet https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title scan_port scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result scan_port done " \
+			$ntfy
+		fi
+
 	else 
 		echo " scan port false "
 	fi
@@ -1205,6 +1377,17 @@ function ip2provider(){
 		cd $tools/ip2provider
 		cat $recon_dir/$target_domain/hosts/ips.txt | python3 ip2provider.py | anew $recon_dir/$target_domain/hosts/ip_provider.txt
 		cd $recon_dir/$target_domain
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title ip2provider scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result ip2provider done " \
+			$ntfy
+		fi
+
 	else 
 		echo "ip provider false"
 	fi
@@ -1221,6 +1404,17 @@ function nuclei_check(){
 		cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/ -severity medium -r $dns_resolver -o $recon_dir/$target_domain/scan/nuclei_output/medium.txt
 		cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/ -severity high -r $dns_resolver -o $recon_dir/$target_domain/scan/nuclei_output/high.txt
 		cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/ -severity critical -r $dns_resolver -o $recon_dir/$target_domain/scan/nuclei_output/critical.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title nuclei_check scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result nuclei_check done " \
+			$ntfy
+		fi
+	
 	else
 		echo " nuclei false"
 	fi
@@ -1234,6 +1428,19 @@ function header_sec(){
 		interlace -tL $recon_dir/$target_domain/.tmp/header_sec.txt -threads 5 -c "./h2t.py scan _target_ -B -k -p description  >  $recon_dir/$target_domain/scan/header_sec/_target_.txt" -v
 	
 		cd $recon_dir/$target_domain/
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title header_sec scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result header_sec done " \
+			$ntfy
+		fi
+
+
+
 	else
 		echo "header security false"
 	fi
@@ -1260,6 +1467,18 @@ function webtehnologies(){
 		rm $reconwtf_dir/*.json
 		echo " start check nuclei webtechnologies"
 		#cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/technologies -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/nuclei_webtehnologies.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title webtehnologies scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result webtehnologies done " \
+			$ntfy
+		fi
+	
+	
 	else
 		echo "webtechnologies false"
 	fi
@@ -1272,6 +1491,17 @@ function fuzzing(){
 		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads $IN_FFUZING -c "ffuf -mc all -fc 404 -ac -t $FFUF_TIME -sf -s -H '$header_cookie' -w ${fuzzing_list} -maxtime $FFUF_MAXTIME -u _target_/FUZZ -of csv -o $recon_dir/$target_domain/fuzzing/_cleantarget_.csv -ac" -o fuzzing
 		cat $recon_dir/$target_domain/fuzzing/*.csv | cut -d ',' -f2,5,6 | tr ',' ' ' | awk '{ print $2 " " "" $1}' | tail -n +2 | sort -k1 | anew -q $recon_dir/$target_domain/fuzzing/ffuz_out.txt
 		rm -r $recon_dir/$target_domain/fuzzing/*.csv
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title fuzzing scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result fuzzing done " \
+			$ntfy
+		fi
+	
 	else
 		echo "ffuzzing false"
 	fi
@@ -1294,6 +1524,17 @@ function url_gf(){
 		gf potential $recon_dir/$target_domain/webs/url_extract.txt | cut -d ':' -f3-5 |anew -q $recon_dir/$target_domain/gf/potential.txt
 		cat $recon_dir/$target_domain/webs/url_extract.txt | egrep -iv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p | anew -q $recon_dir/$target_domain/gf/endpoints.txt
 		gf lfi $recon_dir/$target_domain/webs/url_extract.txt | anew -q $recon_dir/$target_domain/gf/lfi.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title url_gf scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result url_gf done " \
+			$ntfy
+		fi
+	
 	else
 		echo "GF false"
 	fi
@@ -1319,6 +1560,17 @@ function domain_info(){
 			cat osint/domain_info_general.txt | grep -E "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | grep "https://domainbigdata.com" | tr -s ' ' ',' | cut -d ',' -f3 > .tmp/domain_registrant_ip.txt
 		fi
 		sed -i -n '/Copyright/q;p' osint/domain_info_general.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title domain_info scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result domain_info done " \
+			$ntfy
+		fi
+	
 	else
 		echo "domain info false"
 	fi
@@ -1343,6 +1595,17 @@ function emaifind(){
 	
 		h8mail -t $target_domain -q domain --loose -c $tools/h8mail_config.ini -j $recon_dir/$target_domain/.tmp/h8_results.json
 		cat $recon_dir/$target_domain/.tmp/h8_results.json | jq -r '.targets[0] | .data[] | .[]' | cut -d '-' -f2 | anew -q $recon_dir/$target_domain/osint/h8mail.txt
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title emaifind scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result emaifind done " \
+			$ntfy
+		fi
+	
 	else
 		echo "email find false "
 	fi
@@ -1353,6 +1616,17 @@ function google_dorks(){
 		echo 'start google dorcs'
 		$tools/degoogle_hunter/degoogle_hunter.sh $target_domain | tee $recon_dir/$target_domain/osint/google_dorks.txt
 		sed -r -i "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" $recon_dir/$target_domain/osint/google_dorks.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title google_dorks scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result google_dorks done " \
+			$ntfy
+		fi
+	
 	else
 		echo "google dorcks false"
 	fi
@@ -1364,6 +1638,17 @@ function github_dorks(){
 		python3 $tools/GitDorker/GitDorker.py -t $GITHUB_TOKEN -e 5 -q $target_domain -p -ri -d "$tools/GitDorker/Dorks/alldorksv3" | grep "\[+\]" | grep "git" | anew -q $recon_dir/$target_domain/osint/gitdorks.txt
 
 		sed -r -i "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" osint/gitdorks.txt
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title github_dorks scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result github_dorks done " \
+			$ntfy
+		fi
+
 	else
 		echo "git dorcs false"
 	fi
@@ -1373,6 +1658,17 @@ function metadata(){
 	if [[ $METADATA == "true" ]]; then
 		echo "start metadata"
 		metafinder -d "$target_domain" -l $IN_METADATA -o $recon_dir/$target_domain/osint -go -bi -ba
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title metadata scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result metadata done " \
+			$ntfy
+		fi
+	
 	else
 		echo "metadata false"
 	fi
@@ -1396,6 +1692,17 @@ function CMSeek(){
 
 		rm -r $tools/CMSeeK/Result/*
 
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title CMSeek scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result CMSeek done " \
+			$ntfy
+		fi
+
+
 	else
 		echo "cms security false"
 	fi
@@ -1404,12 +1711,31 @@ function CMSeek(){
 
 function cors(){
 	python3 $tools/Corsy/corsy.py -i $recon_dir/$target_domain/webs/webs.txt > $recon_dir/$target_domain/webs/cors.txt
+	
+		if [[ $ntfy_end_modules == "true" ]]; then
 
+			curl \
+			-H "Title: $ntfy_title cors scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result cors done " \
+			$ntfy
+		fi
 }
 
 function openreditrct(){
 	cat $recon_dir/$target_domain/gf/redirect.txt | qsreplace FUZZ | anew -q $recon_dir/$target_domain/.tmp/tmp_redirect.txt
 	python3 $tools/OpenRedireX/openredirex.py -l $recon_dir/$target_domain/.tmp/tmp_redirect.txt --keyword FUZZ -p $tools/OpenRedireX/payloads.txt| grep "^http" > $recon_dir/$target_domain/vulns/redirect.txt
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title openreditrct scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result openreditrct done " \
+			$ntfy
+		fi
 
 }
 
@@ -1417,6 +1743,17 @@ function x4xxbypass(){
 
 	cat $recon_dir/$target_domain/fuzzing/*.txt | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | dirdar -only-ok > $recon_dir/$target_domain/.tmp/dirdar.txt
 	cat $recon_dir/$target_domain/.tmp/dirdar.txt | sed -e '1,12d' | sed '/^$/d' | anew -q $recon_dir/$target_domain/vulns/4xxbypass.txt
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title 4xxbypass scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result 4xxbypass done " \
+			$ntfy
+		fi
+
 }
 
 
@@ -1545,8 +1882,20 @@ function archive_scan(){
 			echo "| File count | $dir_path2 | $dir_path2_archive |" >> $recon_dir/$target_domain/README.md
 
 		done	
-		
 
+		# Сравниваем эндпоинты от goobaster
+		echo " " >> $recon_dir/$target_domain/README.md
+		echo "| Endpoint subdomain | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+		echo "|--------|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+		for endpoint_file in $(ls $recon_dir/$target_domain/webs/endpoint)
+		do
+
+			endpoint_file1=$(cat $recon_dir/$target_domain/webs/endpoint/$endpoint_file | wc -l)
+			endpoint_file2=$(cat $recon_dir/$target_domain/archive/webs/endpoint/$endpoint_file | wc -l)
+			#echo $endpoint_file
+			echo "| $endpoint_file | $endpoint_file1 | $endpoint_file2 |" >> $recon_dir/$target_domain/README.md
+		done		
+		echo " " >> $recon_dir/$target_domain/README.md
 		# начинаем сравнивать через diff
 
 		echo " " >> $recon_dir/$target_domain/README.md
@@ -1554,6 +1903,29 @@ function archive_scan(){
 		echo "# diff scaner : $date_achive_scan : $date " >> $recon_dir/$target_domain/README.md
 		echo " " >> $recon_dir/$target_domain/README.md
 		echo " " >> $recon_dir/$target_domain/README.md
+
+		# сравниваем ендпоинты дифом
+
+		echo " " >> $recon_dir/$target_domain/README.md
+		for endpoint_file in $(ls $recon_dir/$target_domain/webs/endpoint)
+		do
+
+			endpoint_file1=$(diff $recon_dir/$target_domain/webs/endpoint/$endpoint_file $recon_dir/$target_domain/archive/webs/endpoint/$endpoint_file)
+			#echo $endpoint_file
+			if [[ $endpoint_file1 == "" ]];then
+				echo "" > /dev/null
+			else
+				echo "| $endpoint_file | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
+				echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
+				echo " " >> $recon_dir/$target_domain/README.md
+				echo '```bash ' >> $recon_dir/$target_domain/README.md
+				echo " $endpoint_file1 " >> $recon_dir/$target_domain/README.md
+				echo '``` ' >> $recon_dir/$target_domain/README.md
+			fi
+		done		
+		echo " " >> $recon_dir/$target_domain/README.md
+
+
 
 		for item in ${arr[*]}
 		do
@@ -1624,6 +1996,17 @@ function archive_scan(){
 
 		# вшатываем папку архива и заново забиваем
 
+		if [[ $ntfy_end_count_script == "true" ]]; then
+
+			scan_ntfy_allow_result=$(cat $recon_dir/$target_domain/README.md)
+
+			curl \
+			-H "Title: $ntfy_title all scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: tada" \
+			-d "$scan_ntfy_allow_result" \
+			$ntfy
+		fi
 
 		rm -r $recon_dir/$target_domain/archive/cidr
 		rm -r $recon_dir/$target_domain/archive/fuzzing
@@ -1636,6 +2019,8 @@ function archive_scan(){
 		rm -r $recon_dir/$target_domain/archive/subdomain
 		rm -r $recon_dir/$target_domain/archive/vulns
 		rm -r $recon_dir/$target_domain/archive/webs
+		#rm -r $recon_dir/$target_domain/archive/notes
+		rm -r $recon_dir/$target_domain/archive/directories
 
 		mkdir -p $recon_dir/$target_domain/archive
 
@@ -1652,6 +2037,8 @@ function archive_scan(){
 		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
 		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
 		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
+		#cp -r $recon_dir/$target_domain/notes $recon_dir/$target_domain/archive/notes
+		cp -r $recon_dir/$target_domain/directories $recon_dir/$target_domain/archive/directories
 
 		date=$(date +"%Y.%m.%d.%k")
 		touch $recon_dir/$target_domain/archive/date.txt
@@ -1682,6 +2069,8 @@ function archive_scan(){
 		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
 		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
 		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
+		#cp -r $recon_dir/$target_domain/notes $recon_dir/$target_domain/archive/notes
+		cp -r $recon_dir/$target_domain/directories $recon_dir/$target_domain/archive/directories
 		# gf hosts js osint scan screenshots subdomain  vulns webs
 
 		date=$(date +"%Y.%m.%d.%k")
@@ -1700,6 +2089,7 @@ function archive_md_lists(){
 	mkdir -p $recon_dir/$target_domain/archive/back_md/$date
 	cp $recon_dir/$target_domain/README.md $recon_dir/$target_domain/archive/back_md/$date/README.md
 	cp $recon_dir/$target_domain/CheckList.md $recon_dir/$target_domain/archive/back_md/$date/CheckList.md
+	cp $recon_dir/$target_domain/notes.md $recon_dir/$target_domain/archive/back_md/$date/notes.md
 
 }
 
@@ -1740,7 +2130,7 @@ function init(){ # инициализация разведки на основе
 	fi
 	#check_tools
 	#tools_update_resurce
-	#preliminary_actions
+	preliminary_actions
 	if [[ -n $passive  ]]; then # только пасивные методы разведки не трогая цель
 		Subdomain_enum_passive
 		SubRresult
@@ -1766,6 +2156,7 @@ function init(){ # инициализация разведки на основе
 		visual_indentification
 		endpoint_enum_passive
 		endpoint_enum_agressive
+		dirbuster
 		jsfind
 		checkWAF
 		ips
@@ -1789,42 +2180,43 @@ function init(){ # инициализация разведки на основе
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
 		
-		#Subdomain_enum_passive
-		#Subdomain_enum
-		#subdomain_permytation
-		#subdomain_bruteforce
-		#SubRresult
-		#webs
-		#zonetransfer_takeovers
-		#s3bucket
-		#scan_hosts
-		#visual_indentification
-		#endpoint_enum_passive
-		#endpoint_enum_agressive
-		#jsfind
-		#checkWAF
-		#ips
-		#cidr_recon
-		#testssl
-		#scan_port
-		#ip2provider
-		#nuclei_check
-		#header_sec
-		#header_grep
-		#webtehnologies
-		#fuzzing
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		webs
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts
+		visual_indentification
+		endpoint_enum_passive
+		endpoint_enum_agressive
+		dirbuster
+		jsfind
+		checkWAF
+		ips
+		cidr_recon
+		testssl
+		scan_port
+		ip2provider
+		nuclei_check
+		header_sec
+		header_grep
+		webtehnologies
+		fuzzing
 		url_gf
-		#url_ext_file
-		#domain_info
-		#emaifind
-		#google_dorks
-		#github_dorks
-		#metadata
-		#cors
-		#openreditrct
-		#x4xxbypass
-		#CMSeek
-		#clearempity
+		url_ext_file
+		domain_info
+		emaifind
+		google_dorks
+		github_dorks
+		metadata
+		cors
+		openreditrct
+		x4xxbypass
+		CMSeek
+		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
 		SubRresult
