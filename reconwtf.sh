@@ -476,7 +476,7 @@ function install_tools(){
 		eval $SUDO apt update -y $DEBUG_STD
 		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium-browser -y $DEBUG_STD
 		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium -y $DEBUG_STD
-		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install go python3 python3-pip build-essential gcc cmake ruby git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx tor medusa xvfb prips -y $DEBUG_STD
+		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install python3 python3-pip build-essential gcc cmake ruby git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx tor medusa xvfb prips -y $DEBUG_STD
 		eval $SUDO systemctl enable tor $DEBUG_STD
 	elif [ -f /etc/redhat-release ]; then
 		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
@@ -1165,11 +1165,11 @@ function jsfind(){
 
 		cat $recon_dir/$target_domain/webs/url_extract.txt | grep -i ".js$" > $recon_dir/$target_domain/js/js_links.txt
 		if [[ $JS_LIVE_CHECS == "true" ]]; then
-			cat $recon_dir/$target_domain/js/js_links.txt | grep -i ".js$" | httpx -silent -no-color -status-code -H $header_cookie | grep "\[200\]$" | eval $see > $recon_dir/$target_domain/js/live_js_links.txt
+			cat $recon_dir/$target_domain/js/js_links.txt | grep -i ".js$" | httpx -silent -random-agent -follow-redirects -no-color -status-code -H "$header_cookie" | grep "\[200\]$" | eval $see > $recon_dir/$target_domain/js/live_js_links.txt
 		fi		
 		# download js file
 		if [[ $JS_DOWNLOAD == "true" ]]; then
-			interlace  -tL $recon_dir/$target_domain/js/live_js_links.txt -threads $IN_JS_DOWNLOAD_FILE -c "echo _target_ | egrep -Eoi '(http|https)://[a-zA-Z0-9./?=_%:-]*' | python3 $tools/single-tools/DownloadJS.py -c "$cookie" -o $recon_dir/$target_domain/js/jsfile"
+			interlace  -tL $recon_dir/$target_domain/js/live_js_links.txt -threads $IN_JS_DOWNLOAD_FILE -c "echo _target_ | egrep -Eoi '(http|https)://[a-zA-Z0-9./?=_%:-]*' | python3 $tools/single-tools/DownloadJS.py -c '$cookie' -o $recon_dir/$target_domain/js/jsfile"
 		fi
 		#Gather Endpoints From JsFiles
 		if [[ $JS_LINKFIND == "true" ]]; then
@@ -1303,34 +1303,25 @@ function ips(){
 
 function cidr_recon(){
 
-	mkdir -p $recon_dir/$target_domain/cidr
-	mkdir -p $recon_dir/$target_domain/cidr/nmap
+	if [[ -n $cidr ]]; then
+		echo "cidr recon"
+		mkdir -p $recon_dir/$target_domain/cidr
+		mkdir -p $recon_dir/$target_domain/cidr/nmap
 
-#	for ip_list in $(cat $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt)
-#	do
-#		result=$(ping -c 2 -W 1 -q $ip_list | grep transmitted)
-#		pattern="2 received";
-#		
-#		 	recived_result=$(echo "$result" | grep "$pattern")
-#			#echo $recived_result
-#		 	if [[ -n $recived_result ]]; then
-#			 	#echo "живой хост $result"
-#				echo $ip_list | anew $recon_dir/$target_domain/cidr/live_ip.txt
-#			fi
-#		
-#	done
+		#ports=$(cat $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt | naabu -silent -p $SCAN_PORT_NAABU_PORTS_LIST | cut -d ':' -f 2 | anew |  tr '\n' ',' | sed s/,$//) && nmap -iL $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt -p $ports -sV -Pn -sC --script='vulners, http-waf-detect, http-security-headers, dns-zone-transfer, http-cross-domain-policy, http-title, whois-ip' --script-args='mincvss=5.0' -oA $recon_dir/$target_domain/cidr/nmap/nmap_scan --stylesheet https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
 
-	ports=$(cat $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt | naabu -silent -p $SCAN_PORT_NAABU_PORTS_LIST | cut -d ':' -f 2 | anew |  tr '\n' ',' | sed s/,$//) && nmap -iL $recon_dir/$target_domain/.tmp/ipcidr_to_ip_list.txt -p $ports -sV -Pn -sC --script='vulners, http-waf-detect, http-security-headers, dns-zone-transfer, http-cross-domain-policy, http-title, whois-ip' --script-args='mincvss=5.0' -oA $recon_dir/$target_domain/cidr/nmap/nmap_scan --stylesheet https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
+			if [[ $ntfy_end_modules == "true" ]]; then
 
-		if [[ $ntfy_end_modules == "true" ]]; then
-
-			curl \
-			-H "Title: $ntfy_title cidr_recon scan result!" \
-			-H "Priority: $ntfy_priority" \
-			-H "Tags: $ntfy_tags" \
-			-d "Scan Result cidr_recon done " \
-			$ntfy
-		fi
+				curl \
+				-H "Title: $ntfy_title cidr_recon scan result!" \
+				-H "Priority: $ntfy_priority" \
+				-H "Tags: $ntfy_tags" \
+				-d "Scan Result cidr_recon done " \
+				$ntfy
+			fi
+	else
+		echo "cidr false"
+	fi
 
 }
 
@@ -1769,7 +1760,11 @@ function clearempity(){
 }
 
 function archive_scan(){
+	
+
 	if [ -d $recon_dir/$target_domain/archive ]; then
+
+		
 		echo "" > $recon_dir/$target_domain/README.md
 
 		# получаем и заполняем количество
@@ -1902,6 +1897,22 @@ function archive_scan(){
 			#echo $endpoint_file
 			echo "| $endpoint_file | $endpoint_file1 | $endpoint_file2 |" >> $recon_dir/$target_domain/README.md
 		done		
+
+
+
+		if [[ $ntfy_end_count_script == "true" ]]; then
+			
+			scan_ntfy_allow_result=$(cat $recon_dir/$target_domain/README.md)
+
+			curl \
+			-H "Title: $ntfy_title all scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: tada" \
+			-d "$scan_ntfy_allow_result" \
+			$ntfy
+		fi
+
+
 		echo " " >> $recon_dir/$target_domain/README.md
 		# начинаем сравнивать через diff
 
@@ -2003,17 +2014,7 @@ function archive_scan(){
 
 		# вшатываем папку архива и заново забиваем
 
-		if [[ $ntfy_end_count_script == "true" ]]; then
 
-			scan_ntfy_allow_result=$(cat $recon_dir/$target_domain/README.md)
-
-			curl \
-			-H "Title: $ntfy_title all scan result!" \
-			-H "Priority: $ntfy_priority" \
-			-H "Tags: tada" \
-			-d "$scan_ntfy_allow_result" \
-			$ntfy
-		fi
 
 		rm -r $recon_dir/$target_domain/archive/cidr
 		rm -r $recon_dir/$target_domain/archive/fuzzing
@@ -2108,6 +2109,7 @@ function github_get_private_scan(){
 			echo "**/.tmp" > .gitignore
 			git add .
 			git commit -m "$date"
+			git pull  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
 			git push  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
 			cd $reconwtf_dir
 		else
@@ -2190,7 +2192,6 @@ MULTILINE-COMMENT
 		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		
 		Subdomain_enum_passive
 		Subdomain_enum
 		subdomain_permytation
@@ -2251,10 +2252,13 @@ MULTILINE-COMMENT
 		clearempity
 
 	fi
-	
-	archive_scan
-	archive_md_lists
-	github_get_private_scan
+	if [[ -n $check_all_tools || -n $install_tools ]]; then
+		echo ""
+	else
+		archive_scan
+		archive_md_lists
+		github_get_private_scan
+	fi
 }
 
 init # запуск главной функции
