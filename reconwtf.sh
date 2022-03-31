@@ -298,6 +298,8 @@ function check_tools(){
 	type -P pip3 &>/dev/null || { printf "${bred} [*] pip3	[NO]${reset}\n"; allinstalled=false;}
 	type -P hakrevdns &>/dev/null || { printf "${bred} [*] hakrevdns	[NO]${reset}\n"; allinstalled=false;}
 	type -P gobuster &>/dev/null || { printf "${bred} [*] gobuster	[NO]${reset}\n"; allinstalled=false;}
+	type -P httprobe &>/dev/null || { printf "${bred} [*] httprobe	[NO]${reset}\n"; allinstalled=false;}
+	
 	
 
 	if [ "${allinstalled}" = true ]; then
@@ -360,7 +362,7 @@ function install_tools(){
 	gotools["gotator"]="go install -v github.com/Josue87/gotator@latest"
 	gotools["naabu"]="go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest"
 	gotools["hakrawler"]="go install -v github.com/hakluke/hakrawler@latest"
-	gotools["httprobe"]="go install -v github.com/tomnomnom/httprobe@@master"
+	gotools["httprobe"]="go install -v github.com/tomnomnom/httprobe@master"
 	gotools["webanalyze"]="go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest"
 	gotools["cent"]="go install -v github.com/xm1k3/cent@latest"
 	gotools["sonarbyte"]="go install -v github.com/channyein1337/sonarbyte@latest"
