@@ -7,6 +7,10 @@ dMP dMP    dMMMMMP     VMMMP"    VMMMP"    dMP dMP    VMMMPVMMP"     dMP       d
 ```
 # RESUME
 
+<p style="color: reg;">
+At the moment this project does not work, as everything in this world is updated, and periodically my tool does not work, also I am tired of supporting it, I suggest you use this project
+</p>
+
 **ReconWTF** This tool is intended for bounty hunters, the script installs and launches the best set of tools for expanding the attack surface, for Web Sites, portals, and Organizations.
 
 **Thanks six2dez for scripts and ideas for the tool, although reconftw and reconWTF are similar, mine works better. at least for me.** 
@@ -18,6 +22,14 @@ git clone https://github.com/solo10010/reconWTF
 cd reconWTF
 chmod +x *.sh
 sh reconWTF --install
+```
+
+# DOCKER BUILD
+
+```bash
+cd reconWTF
+docker build . -t reconwtf
+docker run reconwtf ./reconwtf.sh -h
 ```
 
 # CONFIG FILE
