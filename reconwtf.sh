@@ -14,6 +14,7 @@ function help(){
 	echo "  -g, --config		<config.conf>	config file '-g dir/config2.conf' "
 	echo "  -c, --cookie 		<cookie>  	cookie -c 'PHPSESSIONID=qweqweqwe'"
 	echo "  -cidr, --cidr		<ip range>	target ip range 192.49,128.0/16"
+	echo "  -n, --name            <trget_name>    target name for example target1"
 	echo ""
 	echo "  -r, --recon-full	 		full target exploration ( with the use of attacks ) "
 	echo "  -s, --subdimain-search	 	only subdomain search, resolution, and subdomain capture "
@@ -32,9 +33,9 @@ function help(){
 	echo "  subfinder 		|		(~/.config/subfinder/config.yaml)"
 	echo "  amass 		|		(~/.config/amass/config.ini)"
 	echo "  GitHub 		|		(~/Tools/.github_tokens)"
-	echo "  SHODAN 		|		(SHODAN_API_KEY in reconftw.cfg)"
-	echo "  SSRF Server 		|		(COLLAB_SERVER in reconftw.cfg)"
-	echo "  Blind XSS Server 	|		(XSS_SERVER in reconftw.cfg) "
+	echo "  SHODAN 		|		(SHODAN_API_KEY in reconWTF.cfg)"
+	echo "  SSRF Server 		|		(COLLAB_SERVER in reconWTF.cfg)"
+	echo "  Blind XSS Server 	|		(XSS_SERVER in reconWTF.cfg) "
 	echo "  theHarvester 		|		(~/Tools/theHarvester/api-keys.yml)"
 	echo "  H8mail 		|		(~/Tools/h8mail_config.ini)"
 	echo "  sigurlfind3r 		|		(~/.config/sigurlfind3r/conf.yaml)"
@@ -109,6 +110,17 @@ case $key in
     else
 	    
 		eval . ./$config
+    fi
+    ;;
+	-n|--name) # имя нашей прогаммы, если мы сканим много скоупа одной программы проше когда все под одним именем какталога
+    name="$2"
+    shift # past argument
+    shift # past value
+    if [[ -z $name ]]
+    then
+	    echo " -n, --name  target name for example target1"
+	    echo "  -h, --help help to reconWTF"
+	    exit
     fi
     ;;
     -r|--recon-full) # полная разведка без атак
@@ -207,6 +219,13 @@ if [[ -n $cookie ]]; then # если были переданы куки то з�
 	header_cookie=$(echo "Cooke: $cookie") # записываем куку в переменнуж с Cookie:
 fi 
 
+# переопределяем переменную recon_dir папки рекона если передано имя программы
+if [[ $name ]]; then
+	    recon_dir="$recon_dir/$name"
+	    echo "$recon_dir sadasdasdsa"
+	    mkdir -p $recon_dir
+fi
+
 see="sed -r 's/\[.+]//' | sed 's/ //g' | sed '/^$/d'" # убрать и STDIN [] \n \f []
 DEBUG_FILE=$recon_dir/$target_domain/.tmp/debug #файл для дебага
 
@@ -227,7 +246,6 @@ function check_tools(){
 	[ -f "$tools/fav-up/favUp.py" ] || { printf "${bred} [*] fav-up		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/Corsy/corsy.py" ] || { printf "${bred} [*] Corsy		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/testssl/testssl.sh" ] || { printf "${bred} [*] testssl		[NO]${reset}\n"; allinstalled=false;}
-	[ -f "$tools/CMSeeK/cmseek.py" ] || { printf "${bred} [*] CMSeeK		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/ctfr/ctfr.py" ] || { printf "${bred} [*] ctfr		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/wordlist/fuzz_wordlist.txt" ] || { printf "${bred} [*] OneListForAll	[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/LinkFinder/linkfinder.py" ] || { printf "${bred} [*] LinkFinder		[NO]${reset}\n"; allinstalled=false;}
@@ -283,7 +301,6 @@ function check_tools(){
 	type -P interactsh-client &>/dev/null || { printf "${bred} [*] interactsh-client	[NO]${reset}\n"; allinstalled=false;}
 	type -P cent &>/dev/null || { printf "${bred} [*] cent	[NO]${reset}\n"; allinstalled=false;}
 	type -P naabu &>/dev/null || { printf "${bred} [*] naabu	[NO]${reset}\n"; allinstalled=false;}
-	type -P sonarbyte &>/dev/null || { printf "${bred} [*] sonarbyte	[NO]${reset}\n"; allinstalled=false;}
 	type -P urlhunter &>/dev/null || { printf "${bred} [*] urlhunter	[NO]${reset}\n"; allinstalled=false;}
 	type -P webanalyze &>/dev/null || { printf "${bred} [*] webanalyze	[NO]${reset}\n"; allinstalled=false;}
 	type -P nmap &>/dev/null || { printf "${bred} [*] nmap	[NO]${reset}\n"; allinstalled=false;}
@@ -334,7 +351,7 @@ function install_tools(){
 	declare -A gotools
 	gotools["gf"]="go install -v github.com/tomnomnom/gf@latest"
 	gotools["qsreplace"]="go install -v github.com/tomnomnom/qsreplace@latest"
-	gotools["Amass"]="go install -v github.com/OWASP/Amass/v3/...@master"
+	gotools["Amass"]="go install -v github.com/owasp-amass/amass/v4/...@master"
 	gotools["ffuf"]="go install -v github.com/ffuf/ffuf@latest"
 	gotools["assetfinder"]="go install -v github.com/tomnomnom/assetfinder@latest"
 	gotools["github-subdomains"]="go install -v github.com/gwen001/github-subdomains@latest"
@@ -365,7 +382,6 @@ function install_tools(){
 	gotools["httprobe"]="go install -v github.com/tomnomnom/httprobe@master"
 	gotools["webanalyze"]="go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest"
 	gotools["cent"]="go install -v github.com/xm1k3/cent@latest"
-	gotools["sonarbyte"]="go install -v github.com/channyein1337/sonarbyte@latest"
 	gotools["urlhunter"]="go install -v github.com/utkusen/urlhunter@latest"
 	gotools["sigurlfind3r"]="go install -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r@latest"
 	gotools["hakrevdns"]="go install -v github.com/hakluke/hakrevdns@latest"
@@ -386,7 +402,6 @@ function install_tools(){
 	repos["ctfr"]="UnaPibaGeek/ctfr"
 	repos["LinkFinder"]="dark-warlord14/LinkFinder"
 	repos["Corsy"]="s0md3v/Corsy"
-	repos["CMSeeK"]="Tuhinshubhra/CMSeeK"
 	repos["fav-up"]="pielco11/fav-up"
 	repos["Interlace"]="codingo/Interlace"
 	repos["massdns"]="blechschmidt/massdns"
@@ -431,7 +446,7 @@ function install_tools(){
 	pip_tools["chardet"]="chardet==3.0.4"
 	pip_tools["colorama"]="colorama==0.4.1"
 	pip_tools["idna"]="idna==2.8"
-	pip_tools["urllib3"]="urllib3==1.24.2"
+	pip_tools["urllib3"]="urllib3==3.0.4"
 	pip_tools["colorclass"]="colorclass==2.2.0"
 	pip_tools["netaddr"]="netaddr==0.7.20"
 	pip_tools["tqdm"]="tqdm==4.36.1"
@@ -458,7 +473,7 @@ function install_tools(){
 	fi
 
 	printf "\n\n${bgreen}#######################################################################${reset}\n"
-	printf "${bgreen} reconFTW installer/updater script ${reset}\n\n"
+	printf "${bgreen} reconWTF installer/updater script ${reset}\n\n"
 	printf "${yellow} This may take time. So, go grab a coffee! ${reset}\n\n"
 
 	if [[ $(id -u | grep -o '^0$') == "0" ]]; then
@@ -468,7 +483,7 @@ function install_tools(){
 			printf "${bred} Is strongly recommended to add your user to sudoers${reset}\n"
 			printf "${bred} This will avoid prompts for sudo password in the middle of the installation${reset}\n"
 			printf "${bred} And more important, in the middle of the scan (needed for nmap SYN scan)${reset}\n\n"
-			printf "${bred} echo \"${USERNAME}  ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/reconFTW${reset}\n\n"
+			printf "${bred} echo \"${USERNAME}  ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/reconWTF${reset}\n\n"
 		fi
     	SUDO="sudo"
 	fi
@@ -507,8 +522,8 @@ function install_tools(){
 
 
 # Installing latest Golang version
-#version=$(curl -L -s https://golang.org/VERSION?m=text)
-version="go1.17.6"
+version=$(curl -L -s https://go.dev/VERSION?m=text)
+#version="go1.20.6"
 printf "${bblue} Running: Installing/Updating Golang ${reset}\n\n"
 if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [ "$version" = $(go version | cut -d " " -f3) ]
     then
@@ -653,14 +668,16 @@ done
 
 if [ "True" = "$IS_ARM" ]
     then
-        eval wget -N -c https://github.com/Findomain/Findomain/releases/latest/download/findomain-armv7  $DEBUG_STD
-        eval $SUDO mv findomain-armv7 /usr/bin/findomain
+        eval wget -N -c https://github.com/Findomain/Findomain/releases/download/9.0.0/findomain-armv7.zip  $DEBUG_STD
+        eval unzip findomain-armv7.zip
+		eval $SUDO mv findomain /usr/bin/findomain
     else
-        eval wget -N -c https://github.com/Findomain/Findomain/releases/latest/download/findomain-linux $DEBUG_STD
+        eval wget -N -c https://github.com/Findomain/Findomain/releases/download/9.0.0/findomain-linux.zip $DEBUG_STD
         eval wget -N -c https://github.com/sensepost/gowitness/releases/download/2.3.4/gowitness-2.3.4-linux-amd64 $DEBUG_STD
         eval wget -N -c https://github.com/Edu4rdSHL/unimap/releases/download/0.4.0/unimap-linux $DEBUG_STD
         eval $SUDO mv gowitness-2.3.4-linux-amd64 /usr/bin/gowitness
-        eval $SUDO mv findomain-linux /usr/bin/findomain
+		eval unzip findomain-linux.zip
+        eval $SUDO mv findomain /usr/bin/findomain
         eval $SUDO mv unimap-linux /usr/bin/unimap
 fi
 eval $SUDO chmod 755 /usr/bin/findomain
@@ -722,7 +739,7 @@ eval strip -s $HOME/go/bin/* $DEBUG_STD
 
 eval $SUDO cp $HOME/go/bin/* /usr/bin/ $DEBUG_STD
 
-printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/config.yaml)\n - GitHub (~/Tools/.github_tokens)\n - SHODAN (SHODAN_API_KEY in reconftw.cfg)\n - SSRF Server (COLLAB_SERVER in reconftw.cfg) \n - Blind XSS Server (XSS_SERVER in reconftw.cfg) \n - notify (~/.config/notify/notify.conf) \n - theHarvester (~/Tools/theHarvester/api-keys.yml)\n - H8mail (~/Tools/h8mail_config.ini)\n sigurlfind3r (~/.config/sigurlfind3r/conf.yaml) \n\n ${reset}"
+printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/config.yaml)\n - GitHub (~/Tools/.github_tokens)\n - SHODAN (SHODAN_API_KEY in reconWTF.cfg)\n - SSRF Server (COLLAB_SERVER in reconWTF.cfg) \n - Blind XSS Server (XSS_SERVER in reconWTF.cfg) \n - notify (~/.config/notify/notify.conf) \n - theHarvester (~/Tools/theHarvester/api-keys.yml)\n - H8mail (~/Tools/h8mail_config.ini)\n sigurlfind3r (~/.config/sigurlfind3r/conf.yaml) \n\n ${reset}"
 printf "${bgreen} Finished!${reset}\n\n"
 printf "${bgreen} Check installed utilities${reset}\n\n"
 printf "${bgreen} ./reconwtf.sh -ct${reset}\n\n"
@@ -797,7 +814,6 @@ function preliminary_actions(){ # предварительные действи�
 		mkdir -p $recon_dir/$target_domain/gf
 		mkdir -p $recon_dir/$target_domain/osint
 		mkdir -p $recon_dir/$target_domain/scan/header_sec
-		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
 		mkdir -p $recon_dir/$target_domain/cidr
 		mkdir -p $recon_dir/$target_domain/notes
 		mkdir -p $recon_dir/$target_domain/directories
@@ -859,8 +875,6 @@ function SubRresult(){
 
 function Subdomain_enum_passive(){
 	if [[ $SUB_ENUM_GENERAL == "true" ]]; then
-			echo " запускается sonarbyte "
-			sonarbyte -d $target_domain | anew $recon_dir/$target_domain/.tmp/sonarbyte_subdomains.txt &>>"$DEBUG_FILE"
 			# запускаем certfinder без dig он не работает
 			if [[ $SUB_ENUM_CERT == "true" ]]; then
 				echo "запускается cert"
@@ -1144,7 +1158,7 @@ function dirbuster(){
 
 	if [[ $DIR_ENUM_GENERAL == "true" ]]; then
 		mkdir -p $recon_dir/$target_domain/directories
-		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "gobuster dir -w $tools/wordlist/dir_list_smal.txt --url _target_ --follow-redirect --status-codes-blacklist '404, 400, 526, 502, 503' --expanded --wildcard --random-agent --no-tls-validation --quiet -o $recon_dir/$target_domain/directories/_target_.txt" -v
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "gobuster dir -w $tools/wordlist/dir_list_smal.txt --url _target_ --follow-redirect --status-codes-blacklist '404, 400, 526, 502, 503' --expanded --random-agent --no-tls-validation --quiet -o $recon_dir/$target_domain/directories/_target_.txt" -v
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -1552,13 +1566,8 @@ function url_ext_file(){
 function domain_info(){
 	if [[ $DOMAIN_INFO == "true" ]]; then
 		echo "start domain info"
-		lynx -dump "https://domainbigdata.com/${domain}" | tail -n +19 > osint/domain_info_general.txt
-		if [ -s "osint/domain_info_general.txt" ]; then
-			cat osint/domain_info_general.txt | grep '/nj/' | tr -s ' ' ',' | cut -d ',' -f3 > .tmp/domain_registrant_name.txt
-			cat osint/domain_info_general.txt | grep '/mj/' | tr -s ' ' ',' | cut -d ',' -f3 > .tmp/domain_registrant_email.txt
-			cat osint/domain_info_general.txt | grep -E "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | grep "https://domainbigdata.com" | tr -s ' ' ',' | cut -d ',' -f3 > .tmp/domain_registrant_ip.txt
-		fi
-		sed -i -n '/Copyright/q;p' osint/domain_info_general.txt
+		echo "$domain"
+		lynx -dump "https://viewdns.info/whois/?domain=$target_domain" | tail -n +20 > osint/domain_info_general.txt
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -1670,40 +1679,6 @@ function metadata(){
 	
 	else
 		echo "metadata false"
-	fi
-}
-
-function CMSeek(){
-	if [[ $CMS_SECURITY == "true" ]]; then
-		echo "Cms SEc start"
-		mkdir -p $recon_dir/$target_domain/scan/CMSeeK
-		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "python3 $tools/CMSeeK/cmseek.py -u _target_ --follow-redirect --random-agent" -v
-		
-		#cat cms.json | jq ".cms_id" | tr -d '"'
-		for dirlist in $(ls $tools/CMSeeK/Result/)
-		do
-			cms_id=$(cat $tools/CMSeeK/Result/$dirlist/cms.json | jq ".cms_id" | tr -d '"')
-			if [[ -n $cms_id ]]; then
-				mkdir -p $recon_dir/$target_domain/scan/CMSeeK/$dirlist
-				cp -r $tools/CMSeeK/Result/$dirlist/cms.json $recon_dir/$target_domain/scan/CMSeeK/$dirlist/cms.json
-			fi
-		done
-
-		rm -r $tools/CMSeeK/Result/*
-
-		if [[ $ntfy_end_modules == "true" ]]; then
-
-			curl \
-			-H "Title: $ntfy_title CMSeek scan result!" \
-			-H "Priority: $ntfy_priority" \
-			-H "Tags: $ntfy_tags" \
-			-d "Scan Result CMSeek done " \
-			$ntfy
-		fi
-
-
-	else
-		echo "cms security false"
 	fi
 }
 
@@ -1842,7 +1817,7 @@ function archive_scan(){
 		arr2[0]=screenshots/
 		arr2[1]=js/jsfile/
 		arr2[2]=scan/header_sec/
-		arr2[3]=scan/CMSeeK/
+		
 
 		for item in ${arr[*]}
 		do
@@ -1915,18 +1890,18 @@ function archive_scan(){
 		fi
 
 
-		echo " " >> $recon_dir/$target_domain/README.md
+		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
 		# начинаем сравнивать через diff
 
-		echo " " >> $recon_dir/$target_domain/README.md
-		echo " " >> $recon_dir/$target_domain/README.md
-		echo "# diff scaner : $date_achive_scan : $date " >> $recon_dir/$target_domain/README.md
-		echo " " >> $recon_dir/$target_domain/README.md
-		echo " " >> $recon_dir/$target_domain/README.md
+		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+		echo "# diff scaner : $date_achive_scan : $date " >> $recon_dir/$target_domain/DIFF_RESULT.md
+		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
 
 		# сравниваем ендпоинты дифом
 
-		echo " " >> $recon_dir/$target_domain/README.md
+		
 		for endpoint_file in $(ls $recon_dir/$target_domain/webs/endpoint)
 		do
 
@@ -1935,15 +1910,15 @@ function archive_scan(){
 			if [[ $endpoint_file1 == "" ]];then
 				echo "" > /dev/null
 			else
-				echo "| $endpoint_file | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
-				echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
-				echo " " >> $recon_dir/$target_domain/README.md
-				echo '```bash ' >> $recon_dir/$target_domain/README.md
-				echo " $endpoint_file1 " >> $recon_dir/$target_domain/README.md
-				echo '``` ' >> $recon_dir/$target_domain/README.md
+				echo "| $endpoint_file | $date_achive_scan | $date |" >> $recon_dir/$target_domain/DIFF_RESULT.md
+				echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/DIFF_RESULT.md
+				echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+				echo '```bash ' >> $recon_dir/$target_domain/DIFF_RESULT.md
+				echo " $endpoint_file1 " >> $recon_dir/$target_domain/DIFF_RESULT.md
+				echo '``` ' >> $recon_dir/$target_domain/DIFF_RESULT.md
 			fi
 		done		
-		echo " " >> $recon_dir/$target_domain/README.md
+		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
 
 
 
@@ -1952,7 +1927,7 @@ function archive_scan(){
 			for i in $(ls -1 -R $item)
 			do
 
-				echo " " >> $recon_dir/$target_domain/README.md
+				echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
 				dir=$(cd $item && pwd)
 				dir_al_path=$(echo "$dir/$i")
 
@@ -1960,19 +1935,19 @@ function archive_scan(){
 				dir_al_path_archive=$(echo "$dir_a/$i")
 						
 				if [[ -f $dir_al_path ]]; then
-					echo " " >> $recon_dir/$target_domain/README.md
+					echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
 					count_file1="$(diff $dir_al_path $dir_al_path_archive)"
 					#count_file2="$(cat $dir_al_path_archive | wc -l)"
 					if [[ $count_file1 == "" ]];then
 						echo "" > /dev/null
 					else
 								
-						echo "| $i | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
-						echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
-						echo " " >> $recon_dir/$target_domain/README.md
-						echo '```bash ' >> $recon_dir/$target_domain/README.md
-						echo " $count_file1 " >> $recon_dir/$target_domain/README.md
-						echo '``` ' >> $recon_dir/$target_domain/README.md
+						echo "| $i | $date_achive_scan | $date |" >> $recon_dir/$target_domain/DIFF_RESULT.md
+						echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/DIFF_RESULT.md
+						echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+						echo '```bash ' >> $recon_dir/$target_domain/DIFF_RESULT.md
+						echo " $count_file1 " >> $recon_dir/$target_domain/DIFF_RESULT.md
+						echo '``` ' >> $recon_dir/$target_domain/DIFF_RESULT.md
 					fi
 				fi
 			done
@@ -1989,12 +1964,11 @@ function archive_scan(){
 					echo "" > /dev/null
 				else
 
-					echo "| $i | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
-					echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/README.md
-					echo " " >> $recon_dir/$target_domain/README.md
-					echo '```bash ' >> $recon_dir/$target_domain/README.md
-					echo " $diff_to_js " >> $recon_dir/$target_domain/README.md
-					echo '``` ' >> $recon_dir/$target_domain/README.md
+					echo "| $i | $date_achive_scan | $date |" >> $recon_dir/$target_domain/DIFF_RESULT.md
+					echo "|----|-------------------|-------|" >> $recon_dir/$target_domain/DIFF_RESULT.md
+					echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+					echo '```bash ' >> $recon_dir/$target_domain/DIFF_RESULT.md
+					echo " $diff_to_js " >> $recon_dir/$target_domain/DIFF_RESDIFF_RESULT.mdREADME.md
 				fi
 
 			done
@@ -2005,13 +1979,13 @@ function archive_scan(){
 		if [[ $diff_to_imge == "" ]]; then
 			echo "" > /dev/null
 		else
-			echo " " >> $recon_dir/$target_domain/README.md
-			echo "| screenshots | $date_achive_scan | $date |" >> $recon_dir/$target_domain/README.md
-			echo "|-------------|-------------------|-------|" >> $recon_dir/$target_domain/README.md
-			echo " " >> $recon_dir/$target_domain/README.md
-			echo '```bash ' >> $recon_dir/$target_domain/README.md
-			echo " $diff_to_imge " >> $recon_dir/$target_domain/README.md
-			echo '``` ' >> $recon_dir/$target_domain/README.md
+			echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+			echo "| screenshots | $date_achive_scan | $date |" >> $recon_dir/$target_domain/DIFF_RESULT.md
+			echo "|-------------|-------------------|-------|" >> $recon_dir/$target_domain/DIFF_RESULT.md
+			echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
+			echo '```bash ' >> $recon_dir/$target_domain/DIFF_RESULT.md
+			echo " $diff_to_imge " >> $recon_dir/$target_domain/DIFF_RESULT.md
+			echo '``` ' >> $recon_dir/$target_domain/DIFF_RESULT.md
 		fi
 
 		# вшатываем папку архива и заново забиваем
@@ -2098,6 +2072,7 @@ function archive_md_lists(){
 	mkdir -p $recon_dir/$target_domain/archive/back_md
 	mkdir -p $recon_dir/$target_domain/archive/back_md/$date
 	cp $recon_dir/$target_domain/README.md $recon_dir/$target_domain/archive/back_md/$date/README.md
+	cp $recon_dir/$target_domain/DIFF_RESULT.md $recon_dir/$target_domain/archive/back_md/$date/DIFF_RESULT.md
 	cp $recon_dir/$target_domain/CheckList.md $recon_dir/$target_domain/archive/back_md/$date/CheckList.md
 	cp $recon_dir/$target_domain/notes.md $recon_dir/$target_domain/archive/back_md/$date/notes.md
 
@@ -2107,15 +2082,17 @@ function github_get_private_scan(){
 	if [[ $git_add == "true" ]]; then
 		if [ -f $recon_dir/.git/index ]; then
 			cd $recon_dir
+			cd ..
 			date=$(date)
 			echo "**/.tmp" > .gitignore
 			git add .
 			git commit -m "$date"
-			git pull  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
-			git push  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
+			git pull git@github.com:$you_git_username/$private_git_repos_name.git
+			git push git@github.com:$you_git_username/$private_git_repos_name.git
 			cd $reconwtf_dir
 		else
 			cd $recon_dir
+			cd ..
 			git init
 			touch .gitignore
 			echo "**/.tmp" > .gitignore
@@ -2191,45 +2168,43 @@ MULTILINE-COMMENT
 		github_dorks
 		metadata
 		x4xxbypass
-		CMSeek
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		Subdomain_enum_passive
-		Subdomain_enum
-		subdomain_permytation
-		subdomain_bruteforce
-		SubRresult
-		webs
-		zonetransfer_takeovers
-		s3bucket
-		scan_hosts
-		visual_indentification
-		endpoint_enum_passive
-		endpoint_enum_agressive
+		#Subdomain_enum_passive
+		#Subdomain_enum
+		#subdomain_permytation
+		#subdomain_bruteforce
+		#SubRresult
+		#webs
+		#zonetransfer_takeovers
+		#s3bucket
+		#scan_hosts
+		#visual_indentification
+		#endpoint_enum_passive
+		#endpoint_enum_agressive
 		dirbuster
-		jsfind
-		checkWAF
-		ips
-		cidr_recon
-		testssl
-		scan_port
-		ip2provider
-		nuclei_check
-		header_sec
-		header_grep
-		webtehnologies
-		fuzzing
-		url_gf
-		url_ext_file
-		domain_info
-		emaifind
-		google_dorks
-		github_dorks
-		metadata
-		cors
-		openreditrct
+		#jsfind
+		#checkWAF
+		#ips
+		#cidr_recon
+		#testssl
+		#scan_port
+		#ip2provider
+		#nuclei_check
+		#header_sec
+		#header_grep
+		#webtehnologies
+		#fuzzing
+		#url_gf
+		#url_ext_file
+		#domain_info
+		#emaifind
+		#google_dorks
+		#github_dorks
+		#metadata
+		#cors
+		#openreditrct
 		x4xxbypass
-		CMSeek
 		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
