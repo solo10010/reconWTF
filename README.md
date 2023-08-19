@@ -1,10 +1,6 @@
-```bash
-    dMMMMb     dMMMMMP    .aMMMb    .aMMMb     dMMMMb    dMP dMP dMP  dMMMMMMP     dMMMMMP 
-   dMP.dMP    dMP        dMP"VMP   dMP"dMP    dMP dMP   dMP dMP dMP     dMP       dMP      
-  dMMMMK"    dMMMP      dMP       dMP dMP    dMP dMP   dMP dMP dMP     dMP       dMMMP     
- dMP"AMF    dMP        dMP.aMP   dMP.aMP    dMP dMP   dMP.dMP.dMP     dMP       dMP        
-dMP dMP    dMMMMMP     VMMMP"    VMMMP"    dMP dMP    VMMMPVMMP"     dMP       dMP         
-```
+
+![logo](https://raw.githubusercontent.com/solo10010/trash/main/static/image/reconwtf1.png "reconWTF Logo")
+
 # RESUME
 
 <p style="color: reg;">
