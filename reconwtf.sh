@@ -316,6 +316,8 @@ function check_tools(){
 	type -P hakrevdns &>/dev/null || { printf "${bred} [*] hakrevdns	[NO]${reset}\n"; allinstalled=false;}
 	type -P gobuster &>/dev/null || { printf "${bred} [*] gobuster	[NO]${reset}\n"; allinstalled=false;}
 	type -P httprobe &>/dev/null || { printf "${bred} [*] httprobe	[NO]${reset}\n"; allinstalled=false;}
+	type -P mubeng &>/dev/null || { printf "${bred} [*] mubeng	[NO]${reset}\n"; allinstalled=false;}
+	type -P proxi &>/dev/null || { printf "${bred} [*] proxi  [NO]${reset}\n"; allinstalled=false;}
 	
 	
 
@@ -330,20 +332,6 @@ function check_tools(){
 
 	printf "${bblue} Tools check finished\n"
 	printf "${bgreen}#######################################################################\n${reset}"
-}
-
-function tools_update_resurce(){
-	if [[ $NUCLEI_UPDATE_TEMPLATES == "true" ]]; then
-		echo " nuclei update templates "
-		eval nuclei -update-templates
-	fi
-	if [[ $NUCLEI_ADDITIONAL_TEMPLATES == "true" ]]; then
-		echo " nuclei update additional templates "
-			#eval cent init
-			#eval cent -p ~/nuclei-templates/cent-nuclei-templates
-	fi
-	eval webanalyze -update
-
 }
 
 function install_tools(){
@@ -386,7 +374,10 @@ function install_tools(){
 	gotools["sigurlfind3r"]="go install -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r@latest"
 	gotools["hakrevdns"]="go install -v github.com/hakluke/hakrevdns@latest"
 	gotools["gobuster"]="go install github.com/OJ/gobuster/v3@latest"
-	
+	gotools["kxss"]="go install github.com/Emoe/kxss"
+	gotools["proxi"]="go install github.com/nicksherron/proxi"
+	gotools["mubeng"]="go install ktbs.dev/mubeng/cmd/mubeng"
+
 
 	declare -A repos
 	repos["degoogle_hunter"]="six2dez/degoogle_hunter"
@@ -419,6 +410,7 @@ function install_tools(){
 	repos["SecretFinder"]="m4ll0k/SecretFinder"
 	repos["webscreenshot"]="maaaaz/webscreenshot"
 	repos["single-tools"]="solo10010/single-tools"
+	repos["DHVAdmin"]="solo10010/DHVAdmin"
 	repos["wordlist"]="solo10010/wordlist"
 
 	declare -A pip_tools
@@ -446,7 +438,7 @@ function install_tools(){
 	pip_tools["chardet"]="chardet==3.0.4"
 	pip_tools["colorama"]="colorama==0.4.1"
 	pip_tools["idna"]="idna==2.8"
-	pip_tools["urllib3"]="urllib3==3.0.4"
+	pip_tools["urllib3"]="urllib3"
 	pip_tools["colorclass"]="colorclass==2.2.0"
 	pip_tools["netaddr"]="netaddr==0.7.20"
 	pip_tools["tqdm"]="tqdm==4.36.1"
@@ -498,7 +490,7 @@ function install_tools(){
 	elif [ -f /etc/redhat-release ]; then
 		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
 		eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
-    	eval $SUDO yum install go chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
+    	eval $SUDO yum install chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
 	elif [ -f /etc/arch-release ]; then
 		printf "${bblue} Running: Installing system packages pacman ${reset}\n\n"
 		curl -O https://blackarch.org/strap.sh $DEBUG_STD
@@ -512,7 +504,7 @@ function install_tools(){
 	elif [ -f /etc/os-release ]; then install_yum;  #/etc/os-release fall in yum for some RedHat and Amazon Linux instances
 		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
 		eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
-    	eval $SUDO yum install go chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
+    	eval $SUDO yum install chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
 	fi
 
 	eval git config --global --unset http.proxy $DEBUG_STD
@@ -522,7 +514,7 @@ function install_tools(){
 
 
 # Installing latest Golang version
-version=$(curl -L -s https://go.dev/VERSION?m=text)
+version=$(curl -L -s "https://go.dev/VERSION?m=text" | head -n 1)
 #version="go1.20.6"
 printf "${bblue} Running: Installing/Updating Golang ${reset}\n\n"
 if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [ "$version" = $(go version | cut -d " " -f3) ]
@@ -547,6 +539,7 @@ if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [ "$versio
                 eval $SUDO tar -C /usr/local -xzf ${version}.darwin-amd64.tar.gz $DEBUG_STD
             fi
         else
+
             eval wget https://dl.google.com/go/${version}.linux-amd64.tar.gz $DEBUG_STD
             eval $SUDO tar -C /usr/local -xzf ${version}.linux-amd64.tar.gz $DEBUG_STD
         fi
@@ -563,9 +556,11 @@ if [[ $go_text_check == "export GOROOT=/usr/local/go" ]]; then
 else
 cat << EOF >> ~/${profile_shell}
 # Golang vars
+
 export GOROOT=/usr/local/go
 export GOPATH=\$HOME/go
 export PATH=\$GOPATH/bin:\$GOROOT/bin:\$HOME/.local/bin:\$PATH
+
 EOF
 fi	
 
@@ -696,6 +691,10 @@ mkdir -p single-tools
 
 eval wget -nc -O wordlist/subdomains_big.txt https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt $DEBUG_STD
 eval wget -nc -O wordlist/dir_list_smal.txt https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-small.txt $DEBUG_STD
+
+# устанавливаем трюфель
+curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
 ## Last check
 if [ "$double_check" = "true" ]; then
     printf "${bblue} Running: Double check for installed tools ${reset}\n\n"
@@ -793,7 +792,23 @@ function preliminary_actions(){ # предварительные действи�
 		else
 			curl https://raw.githubusercontent.com/solo10010/Bagbounty_resources/main/checklist/notes.md > $recon_dir/$target_domain/notes.md
 		fi
-	
+
+# запускаем обновление некоторых инструментов которым это нужно
+
+function tools_update_resurce(){
+	if [[ $NUCLEI_UPDATE_TEMPLATES == "true" ]]; then
+		echo " nuclei update templates "
+		eval nuclei -update-templates
+	fi
+	if [[ $CENT_ADDITIONAL_NUCLEI_TEMPLATES == "true" ]]; then
+		echo " nuclei update additional templates "
+			eval cent init
+			eval cent -p ~/nuclei-templates/
+	fi
+	eval webanalyze -update
+
+}
+
 
 	# создаем нужные директории если их нет. если есть не создаем
 	if ! [ -d $recon_dir/$target_domain/ ]; then
@@ -1270,7 +1285,7 @@ function jsfind(){
 function checkWAF(){
 	if [[ $CHECK_WAF == "true" ]]; then
 		echo "start check WAF"
-		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads 5 -c "wafw00f  _target_ >> $recon_dir/$target_domain/.tmp/wafw00f.txt" -v
+		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads 5 -c "wafw00f  _target_ | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" >> $recon_dir/$target_domain/.tmp/wafw00f.txt" -v
 		cat $recon_dir/$target_domain/.tmp/wafw00f.txt | grep "The site" | anew $recon_dir/$target_domain/hosts/waf.txt
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
@@ -2170,40 +2185,40 @@ MULTILINE-COMMENT
 		x4xxbypass
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		#Subdomain_enum_passive
-		#Subdomain_enum
-		#subdomain_permytation
-		#subdomain_bruteforce
-		#SubRresult
-		#webs
-		#zonetransfer_takeovers
-		#s3bucket
-		#scan_hosts
-		#visual_indentification
-		#endpoint_enum_passive
-		#endpoint_enum_agressive
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		webs
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts
+		visual_indentification
+		endpoint_enum_passive
+		endpoint_enum_agressive
 		dirbuster
-		#jsfind
-		#checkWAF
-		#ips
-		#cidr_recon
-		#testssl
-		#scan_port
-		#ip2provider
-		#nuclei_check
-		#header_sec
-		#header_grep
-		#webtehnologies
-		#fuzzing
-		#url_gf
-		#url_ext_file
-		#domain_info
-		#emaifind
-		#google_dorks
-		#github_dorks
-		#metadata
-		#cors
-		#openreditrct
+		jsfind
+		checkWAF
+		ips
+		cidr_recon
+		testssl
+		scan_port
+		ip2provider
+		nuclei_check
+		header_sec
+		header_grep
+		webtehnologies
+		fuzzing
+		url_gf
+		url_ext_file
+		domain_info
+		emaifind
+		google_dorks
+		github_dorks
+		metadata
+		cors
+		openreditrct
 		x4xxbypass
 		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
