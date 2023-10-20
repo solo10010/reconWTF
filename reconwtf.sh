@@ -222,7 +222,6 @@ fi
 # переопределяем переменную recon_dir папки рекона если передано имя программы
 if [[ $name ]]; then
 	    recon_dir="$recon_dir/$name"
-	    echo "$recon_dir sadasdasdsa"
 	    mkdir -p $recon_dir
 fi
 
@@ -241,7 +240,6 @@ function check_tools(){
 	[ -n "$GOROOT" ] || { printf "${bred} [*] GOROOT var		[NO]${reset}\n"; allinstalled=false;}
 	[ -n "$PATH" ] || { printf "${bred} [*] PATH var		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/degoogle_hunter/degoogle.py" ] || { printf "${bred} [*] degoogle		[NO]${reset}\n"; allinstalled=false;}
-	[ -f "$tools/dnsrecon/dnsrecon.py" ] || { printf "${bred} [*] dnsrecon	[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/pwndb/pwndb.py" ] || { printf "${bred} [*] fav-up		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/fav-up/favUp.py" ] || { printf "${bred} [*] fav-up		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/Corsy/corsy.py" ] || { printf "${bred} [*] Corsy		[NO]${reset}\n"; allinstalled=false;}
@@ -260,6 +258,7 @@ function check_tools(){
 	[ -f "$tools/h2t/h2t.py" ] || { printf "${bred} [*] h2t		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/webscreenshot/webscreenshot.py" ] || { printf "${bred} [*] webscreenshot		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/brutespray/brutespray.py" ] || { printf "${bred} [*] brutespray		[NO]${reset}\n"; allinstalled=false;}
+	[ -f "$tools/DHVAdmin/dhv.sh" ] || { printf "${bred} [*] dhv.sh		[NO]${reset}\n"; allinstalled=false;}
 	type -P dirdar &>/dev/null || { printf "${bred} [*] dirdar		[NO]${reset}\n"; allinstalled=false;}
 	type -P github-endpoints &>/dev/null || { printf "${bred} [*] github-endpoints	[NO]${reset}\n"; allinstalled=false;}
 	type -P github-subdomains &>/dev/null || { printf "${bred} [*] github-subdomains	[NO]${reset}\n"; allinstalled=false;}
@@ -316,22 +315,26 @@ function check_tools(){
 	type -P hakrevdns &>/dev/null || { printf "${bred} [*] hakrevdns	[NO]${reset}\n"; allinstalled=false;}
 	type -P gobuster &>/dev/null || { printf "${bred} [*] gobuster	[NO]${reset}\n"; allinstalled=false;}
 	type -P httprobe &>/dev/null || { printf "${bred} [*] httprobe	[NO]${reset}\n"; allinstalled=false;}
-	type -P mubeng &>/dev/null || { printf "${bred} [*] mubeng	[NO]${reset}\n"; allinstalled=false;}
+	type -P mubeng &>/dev/null || { printf "${bred} [*] mubeng [NO]${reset}\n"; allinstalled=false;}
 	type -P proxi &>/dev/null || { printf "${bred} [*] proxi  [NO]${reset}\n"; allinstalled=false;}
+	type -P fff &>/dev/null || { printf "${bred} [*] fff  [NO]${reset}\n"; allinstalled=false;}
+	type -P whatweb &>/dev/null || { printf "${bred} [*] whatweb  [NO]${reset}\n"; allinstalled=false;}
+	type -P arjun &>/dev/null || { printf "${bred} [*] arjun  [NO]${reset}\n"; allinstalled=false;}
 	
 	
 
 	if [ "${allinstalled}" = true ]; then
-		printf "${bgreen} Good! All installed! ${reset}\n\n"
+		printf "${bgreen} Хорошо! Все установлено! ${reset}\n\n"
 	else
-		printf "\n${yellow} Try running the installer script again ./install.sh"
-		printf "\n${yellow} If it fails for any reason try to install manually the tools missed"
-		printf "\n${yellow} Finally remember to set the ${bred}\$tools${yellow} variable at the start of this script"
-		printf "\n${yellow} If nothing works and the world is gonna end you can always ping me :D ${reset}\n\n"
+		printf "\n${yellow} Попробуйте запустить скрипт установки снова ./install.sh"
+		printf "\n${yellow} Если что-то по какой-либо причине не устанавливается, попробуйте установить отдельно недостающие утилиты вручную"
+		printf "\n${yellow} Не забудьте установить переменную ${bred}\$tools${yellow} в начале этого скрипта"
+		printf "\n${yellow} Если ничего не помогает и мир готовится к концу, вы всегда можете написать мне :D ${reset}\n\n"
 	fi
 
-	printf "${bblue} Tools check finished\n"
+	printf "${bblue} Проверка инструментов завершена\n"
 	printf "${bgreen}#######################################################################\n${reset}"
+
 }
 
 function install_tools(){
@@ -371,19 +374,19 @@ function install_tools(){
 	gotools["webanalyze"]="go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest"
 	gotools["cent"]="go install -v github.com/xm1k3/cent@latest"
 	gotools["urlhunter"]="go install -v github.com/utkusen/urlhunter@latest"
-	gotools["sigurlfind3r"]="go install -v github.com/signedsecurity/sigurlfind3r/cmd/sigurlfind3r@latest"
+	gotools["xurlfind3r"]="go install -v github.com/hueristiq/xurlfind3r/cmd/xurlfind3r@latest"
 	gotools["hakrevdns"]="go install -v github.com/hakluke/hakrevdns@latest"
 	gotools["gobuster"]="go install github.com/OJ/gobuster/v3@latest"
-	gotools["kxss"]="go install github.com/Emoe/kxss"
-	gotools["proxi"]="go install github.com/nicksherron/proxi"
-	gotools["mubeng"]="go install ktbs.dev/mubeng/cmd/mubeng"
+	gotools["kxss"]="go install github.com/Emoe/kxss@latest"
+	gotools["proxi"]="go install github.com/nicksherron/proxi@latest"
+	gotools["mubeng"]="go install ktbs.dev/mubeng/cmd/mubeng@latest"
+	gotools["fff"]="go install github.com/tomnomnom/fff@latest"
 
 
 	declare -A repos
 	repos["degoogle_hunter"]="six2dez/degoogle_hunter"
 	repos["pwndb"]="davidtavarez/pwndb"
 	repos["dnsvalidator"]="vortexau/dnsvalidator"
-	repos["dnsrecon"]="darkoperator/dnsrecon"
 	repos["theHarvester"]="laramies/theHarvester"
 	repos["brutespray"]="x90skysn3k/brutespray"
 	repos["wafw00f"]="EnableSecurity/wafw00f"
@@ -412,46 +415,51 @@ function install_tools(){
 	repos["single-tools"]="solo10010/single-tools"
 	repos["DHVAdmin"]="solo10010/DHVAdmin"
 	repos["wordlist"]="solo10010/wordlist"
+	repos["ParamSpider"]="0xKayala/ParamSpider"
+	repos["solo-nuclei-templates"]="solo10010/solo-nuclei-templates"
 
 	declare -A pip_tools
 	pip_tools["dnsgen"]="dnsgen"
 	pip_tools["argcomplete"]="argcomplete==1.10.0"
-	pip_tools["dnspython"]="dnspython"
-	pip_tools["requests"]="requests"
-	pip_tools["requests_futures"]="requests_futures"
-	pip_tools["dnspython"]="dnspython>=2.0.0"
-	pip_tools["netaddr"]="netaddr"
 	pip_tools["lxml"]="lxml"
 	pip_tools["flake8"]="flake8"
 	pip_tools["pytest"]="pytest"
-	pip_tools["colorclass"]="colorclass"
-	pip_tools["beautifulsoup4"]="beautifulsoup4"
-	pip_tools["shodan"]="shodan"
+	pip_tools["colorclass"]="colorclass==2.2.0"
+	pip_tools["beautifulsoup4"]="beautifulsoup4==4.12.2"
+	pip_tools["shodan"]="shodan==1.30.0"
 	pip_tools["mmh3"]="mmh3"
 	pip_tools["ipwhois"]="ipwhois"
 	pip_tools["argparse"]="argparse"
-	pip_tools["tqdm"]="tqdm>=4.32.0"
+	pip_tools["tqdm"]="tqdm==4.62.3"
 	pip_tools["fake-useragent"]="fake-useragent"
 	pip_tools["termcolor"]="termcolor"
-	pip_tools["tqdm"]="tqdm"
-	pip_tools["certifi"]="certifi==2018.11.29"
+	pip_tools["certifi"]="certifi==2023.7.22"
 	pip_tools["chardet"]="chardet==3.0.4"
 	pip_tools["colorama"]="colorama==0.4.1"
 	pip_tools["idna"]="idna==2.8"
 	pip_tools["urllib3"]="urllib3"
-	pip_tools["colorclass"]="colorclass==2.2.0"
-	pip_tools["netaddr"]="netaddr==0.7.20"
-	pip_tools["tqdm"]="tqdm==4.36.1"
-	pip_tools["dnspython"]="dnspython==1.16.0"
-	pip_tools["beautifulsoup4"]="beautifulsoup4==4.9.3"
 	pip_tools["jsbeautifier"]="jsbeautifier"
 	pip_tools["PySocks"]="PySocks==1.6.8"
 	pip_tools["requests_file"]="requests_file"
 	pip_tools["future"]="future"
 	pip_tools["emailfinder"]="emailfinder"
 	pip_tools["metafinder"]="metafinder"
-	pip_tools["tqdm"]="tqdm==4.62.3"
-	pip_tools["aiohttp"]="aiohttp"
+	pip_tools["aiodns"]="aiodns==3.1.0"
+	pip_tools["aiofiles"]="aiofiles==23.2.1"
+	pip_tools["aiohttp"]="aiohttp==3.8.6"
+	pip_tools["aiomultiprocess"]="aiomultiprocess==0.9.0"
+	pip_tools["aiosqlite"]="aiosqlite==0.19.0"
+	pip_tools["ujson"]="ujson==5.8.0"
+	pip_tools["pyppeteer"]="pyppeteer==1.0.2"
+	pip_tools["PyYAML"]="PyYAML==6.0.1"
+	pip_tools["python-dateutil"]="python-dateutil==2.8.2"
+	pip_tools["retrying"]="retrying==1.3.4"
+	pip_tools["setuptools"]="setuptools==68.2.2"
+	pip_tools["slowapi"]="slowapi==0.1.8"
+	pip_tools["uvicorn"]="uvicorn==0.23.2"
+	pip_tools["fastapi"]="fastapi==0.103.2"
+	pip_tools["censys"]="censys==2.2.7"
+	pip_tools["arjun"]="arjun"
 
 
 	dir=${tools}
@@ -465,46 +473,46 @@ function install_tools(){
 	fi
 
 	printf "\n\n${bgreen}#######################################################################${reset}\n"
-	printf "${bgreen} reconWTF installer/updater script ${reset}\n\n"
-	printf "${yellow} This may take time. So, go grab a coffee! ${reset}\n\n"
+	printf "${bgreen} Скрипт установки/обновления reconWTF ${reset}\n\n"
+	printf "${yellow} Это может занять некоторое время. Так что возьмите кофе! ${reset}\n\n"
 
 	if [[ $(id -u | grep -o '^0$') == "0" ]]; then
-    	SUDO=" "
+		SUDO=" "
 	else
 		if sudo -n false 2>/dev/null; then
-			printf "${bred} Is strongly recommended to add your user to sudoers${reset}\n"
-			printf "${bred} This will avoid prompts for sudo password in the middle of the installation${reset}\n"
-			printf "${bred} And more important, in the middle of the scan (needed for nmap SYN scan)${reset}\n\n"
+			printf "${bred} Сильно рекомендуется добавить своего пользователя в sudoers${reset}\n"
+			printf "${bred} Это избавит вас от запросов пароля sudo во время установки${reset}\n"
+			printf "${bred} И, что более важно, во время сканирования (необходимо для SYN-сканирования nmap)${reset}\n\n"
 			printf "${bred} echo \"${USERNAME}  ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/reconWTF${reset}\n\n"
 		fi
-    	SUDO="sudo"
+		SUDO="sudo"
 	fi
 
 	if [ -f /etc/debian_version ]; then 
-		printf "${bblue} Running: Installing system packages фзе ${reset}\n\n"
+		printf "${bblue} Выполняется: Установка системных пакетов apt ${reset}\n\n"
 		eval $SUDO apt update -y $DEBUG_STD
 		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium-browser -y $DEBUG_STD
 		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium -y $DEBUG_STD
-		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install python3 python3-pip build-essential gcc cmake ruby git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx tor medusa xvfb prips -y $DEBUG_STD
+		eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install python3 whatweb python3-pip build-essential gcc cmake ruby git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx tor medusa xvfb prips -y $DEBUG_STD
 		eval $SUDO systemctl enable tor $DEBUG_STD
 	elif [ -f /etc/redhat-release ]; then
-		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
+		printf "${bblue} Выполняется: Установка системных пакетов yum ${reset}\n\n"
 		eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
-    	eval $SUDO yum install chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
+    	eval $SUDO yum install chromium python3 whatweb python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
 	elif [ -f /etc/arch-release ]; then
-		printf "${bblue} Running: Installing system packages pacman ${reset}\n\n"
+		printf "${bblue} Выполняется: Установка системных пакетов pacman ${reset}\n\n"
 		curl -O https://blackarch.org/strap.sh $DEBUG_STD
 		chmod +x strap.sh $DEBUG_STD
 		sudo ./strap.sh $DEBUG_STD
 		rm ./strap.sh
 
 		eval $SUDO pacman -Syu --noconfirm $DEBUG_STD
-		eval $SUDO pacman -S --noconfirm --overwrite  python3 parallel go python python-pip base-devel gcc cmake ruby git curl libpcap wget zip nmap chromium lynx pv bind openssl libffi libxml2 libxslt zlib nmap jq tor medusa xorg-server-xvfb -y $DEBUG_STD
+		eval $SUDO pacman -S --noconfirm --overwrite  python3 whatweb parallel go python python-pip base-devel gcc cmake ruby git curl libpcap wget zip nmap chromium lynx pv bind openssl libffi libxml2 libxslt zlib nmap jq tor medusa xorg-server-xvfb -y $DEBUG_STD
     	#eval $SUDO systemctl enable --now tor.service $DEBUG_STD
 	elif [ -f /etc/os-release ]; then install_yum;  #/etc/os-release fall in yum for some RedHat and Amazon Linux instances
-		printf "${bblue} Running: Installing system packages yum ${reset}\n\n"
+		printf "${bblue} Выполняется: Установка системных пакетов yum ${reset}\n\n"
 		eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
-    	eval $SUDO yum install chromium python3 python3-pip gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
+    	eval $SUDO yum install chromium python3 python3-pip whatweb gcc cmake ruby git curl libpcap-dev wget zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx tor medusa xorg-x11-server-xvfb prips -y $DEBUG_STD
 	fi
 
 	eval git config --global --unset http.proxy $DEBUG_STD
@@ -516,10 +524,10 @@ function install_tools(){
 # Installing latest Golang version
 version=$(curl -L -s "https://go.dev/VERSION?m=text" | head -n 1)
 #version="go1.20.6"
-printf "${bblue} Running: Installing/Updating Golang ${reset}\n\n"
+printf "${bblue} Запуск: установка/обновление Golang ${reset}\n\n"
 if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [ "$version" = $(go version | cut -d " " -f3) ]
     then
-        printf "${bgreen} Golang is already installed and updated ${reset}\n\n"
+        printf "${bgreen} Golang уже установлен и обновлен. ${reset}\n\n"
     else
         eval $SUDO rm -rf /usr/local/go $DEBUG_STD
         if [ "True" = "$IS_ARM" ]; then
@@ -566,10 +574,9 @@ fi
 
 fi
 
-[ -n "$GOPATH" ] || { printf "${bred} GOPATH env var not detected, add Golang env vars to your \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
-[ -n "$GOROOT" ] || { printf "${bred} GOROOT env var not detected, add Golang env vars to your \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
-
-printf "${bblue} Running: Installing requirements ${reset}\n\n"
+[ -n "$GOPATH" ] || { printf "${bred} Переменная окружения GOPATH не обнаружена, добавьте переменные окружения Golang в свой \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
+[ -n "$GOROOT" ] || { printf "${bred} Переменная окружения GOROOT не обнаружена, добавьте переменные окружения Golang в свой \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
+printf "${bblue} Выполняется: установка требований ${reset}\n\n"
 
 mkdir -p ~/.gf
 mkdir -p $tools
@@ -582,7 +589,7 @@ touch $dir/.github_tokens
 #eval rm -f get-pip.py $DEBUG_STD
 #eval ln -s /usr/local/bin/pip3 /usr/bin/pip3 $DEBUG_STD
 
-printf "${bblue} Running: Installing Golang tools (${#gotools[@]})${reset}\n\n"
+printf "${bblue} Выполняется: установка инструментов Golang. (${#gotools[@]})${reset}\n\n"
 go env -w GO111MODULE=auto
 go_step=0
 for gotool in "${!gotools[@]}"; do
@@ -599,7 +606,7 @@ for gotool in "${!gotools[@]}"; do
 done
 
 
-printf "${bblue}\n Running: Installing pip3 requements (${#pip_tools[@]})${reset}\n\n"
+printf "${bblue}\n Выполняется: установка требований pip3 (${#pip_tools[@]})${reset}\n\n"
 pip_step=0
 for pip_tool in "${!pip_tools[@]}"; do
     pip_step=$((pip_step + 1))
@@ -614,8 +621,13 @@ for pip_tool in "${!pip_tools[@]}"; do
     fi
 done
 
+# устанавливаем рекурсивно все зависимости из requirements.txt в папке утилиты во всех каталогов (навсякий случай)
+printf "\n\n${bgreen}#######################################################################${reset}\n"
+printf "${bgreen} reconWTF Устанавливаем рекурсивно все зависимсоти из каталога ${tools} ${reset}\n\n"
 
-printf "${bblue}\n Running: Installing repositories (${#repos[@]})${reset}\n\n"
+find . -name "requirements.txt" -exec readlink -f {} \; | xargs -n 1 -I {} pip3 install -r {} >/dev/null 2>&1
+
+printf "${bblue}\n Выполняется: Установка репозиториев (${#repos[@]})${reset}\n\n"
 
 eval git clone https://github.com/projectdiscovery/nuclei-templates ~/nuclei-templates $DEBUG_STD
 eval git clone https://github.com/geeknik/the-nuclei-templates.git ~/nuclei-templates/extra_templates $DEBUG_STD
@@ -624,7 +636,6 @@ cd ~/nuclei-templates/extra_templates && eval git pull $DEBUG_STD
 cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
 eval sed -i 's/^#random-agent: false/random-agent: true/' ~/.config/nuclei/config.yaml $DEBUG_ERROR
 eval git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git $dir/sqlmap $DEBUG_STD
-eval git clone --depth 1 https://github.com/drwetter/testssl.sh.git $dir/testssl.sh $DEBUG_STD
 
 # Standard repos installation
 repos_step=0
@@ -638,7 +649,7 @@ for repo in "${!repos[@]}"; do
     then
         printf "${yellow} $repo installed (${repos_step}/${#repos[@]})${reset}\n"
     else
-        printf "${red} Unable to install $repo, try manually (${repos_step}/${#repos[@]})${reset}\n"
+        printf "${red} Невозможно установить $repo, попробуйте вручную (${repos_step}/${#repos[@]})${reset}\n"
         double_check=true
     fi
     if [ -s "setup.py" ]; then
@@ -649,7 +660,7 @@ for repo in "${!repos[@]}"; do
     elif [ "gf" = "$repo" ]; then
             eval cp examples/*.json ~/.gf $DEBUG_ERROR
     elif [ "Gf-Patterns" = "$repo" ]; then
-            eval mv *.json ~/.gf $DEBUG_ERROR
+            eval cp *.json ~/.gf $DEBUG_ERROR
     elif [ "urldedupe" = "$repo" ]; then
             eval cmake CMakeLists.txt $DEBUG_STD
             eval make $DEBUG_STD
@@ -681,7 +692,7 @@ eval $SUDO chmod 755 /usr/bin/unimap
 eval subfinder $DEBUG_STD
 eval subfinder $DEBUG_STD
 
-printf "${bblue}\n Running: Downloading required files ${reset}\n\n"
+printf "${bblue}\n Выполняется: Загрузка необходимых файлов. ${reset}\n\n"
 ## Downloads
 eval wget -nc -O ~/.config/amass/config.ini https://raw.githubusercontent.com/OWASP/Amass/master/examples/config.ini $DEBUG_STD
 eval wget -nc -O ~/.gf/potential.json https://raw.githubusercontent.com/devanshbatham/ParamSpider/master/gf_profiles/potential.json $DEBUG_STD
@@ -692,12 +703,12 @@ mkdir -p single-tools
 eval wget -nc -O wordlist/subdomains_big.txt https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt $DEBUG_STD
 eval wget -nc -O wordlist/dir_list_smal.txt https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-small.txt $DEBUG_STD
 
-# устанавливаем трюфель
+printf "${bblue}\n Устанавливаем trufflehog ${reset}\n\n"
 curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
 
 ## Last check
 if [ "$double_check" = "true" ]; then
-    printf "${bblue} Running: Double check for installed tools ${reset}\n\n"
+    printf "${bblue} Выполняется: двойная проверка установленных инструментов. ${reset}\n\n"
     go_step=0
     for gotool in "${!gotools[@]}"; do
         go_step=$((go_step + 1))
@@ -717,6 +728,12 @@ if [ "$double_check" = "true" ]; then
                 eval make $DEBUG_STD && strip -s bin/massdns && eval $SUDO cp bin/massdns /usr/bin/ $DEBUG_ERROR
         elif [ "gf" = "$repo" ]; then
                 eval cp -r examples ~/.gf $DEBUG_ERROR
+				# Проверяем, существует ли файл .zshrc
+				if [ -f "$zshrc_file" ]; then
+					# Удаляем плагин git из списка расширений в .zshrc иначе gf не сможет работать
+					sed -i '/^plugins=(/{s/ git//;}' "$zshrc_file"
+					printf "${bblue} Плагин git был удален из списка расширений в .zshrc ${reset}\n\n"
+				fi
         elif [ "Gf-Patterns" = "$repo" ]; then
                 eval mv *.json ~/.gf $DEBUG_ERROR
         fi
@@ -727,7 +744,7 @@ fi
 printf "${bblue} Running: Performing last configurations ${reset}\n\n"
 ## Last steps
 if [ ! -s "wordlist/resolvers.txt" ] || [ $(find "wordlist/resolvers.txt" -mtime +1 -print) ]; then
-    printf "${yellow} Resolvers seem older than 1 day\n Generating custom resolvers... ${reset}\n\n"
+    printf "${yellow} Судя по всему, резолверы старше 1 дня.\n Создание пользовательских резолверов... ${reset}\n\n"
     eval rm -f wordlist/resolvers.txt &>/dev/null
     eval dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 100 -o wordlist/resolvers.txt $DEBUG_STD
 fi
@@ -771,45 +788,171 @@ function preliminary_actions(){ # предварительные действи�
 		echo "dnsvalidator gen dnsresolver true"
 		exec dnsvalidator \--no-color \-threads $DNS_VALIDATION_THREADS \-o $tools/wordlist/resolvers.txt &> /dev/null
 	fi
-		if [ -e $recon_dir/README.md ]; then 
-			 echo ""
-		else
-			touch $recon_dir/README.md
-		fi
-		if [ -e $recon_dir/$target_domain/README.md ]; then 
-			 echo ""
-		else
-			touch $recon_dir/$target_domain/README.md
-		fi
-
-		if [ -f $recon_dir/$target_domain/CheckList.md ]; then
-			echo ""
-		else
-			curl https://raw.githubusercontent.com/solo10010/Bagbounty_resources/main/checklist/README.md > $recon_dir/$target_domain/CheckList.md
-		fi
-			if [ -f $recon_dir/$target_domain/notes.md  ]; then
-			echo ""
-		else
-			curl https://raw.githubusercontent.com/solo10010/Bagbounty_resources/main/checklist/notes.md > $recon_dir/$target_domain/notes.md
-		fi
-
+}
 # запускаем обновление некоторых инструментов которым это нужно
 
 function tools_update_resurce(){
-	if [[ $NUCLEI_UPDATE_TEMPLATES == "true" ]]; then
-		echo " nuclei update templates "
+	# обновляем шаблоны nuclei
+	if [[ $NUCLEI_UPDATE_TEMPLATES == "true" && -n $install_tools ]]; then
+		printf "\n\n${bgreen}#######################################################################${reset}\n"
+		printf "${bblue} Обновление стандартных шаблонов nuclei ${reset}\n\n"
 		eval nuclei -update-templates
 	fi
-	if [[ $CENT_ADDITIONAL_NUCLEI_TEMPLATES == "true" ]]; then
-		echo " nuclei update additional templates "
-			eval cent init
-			eval cent -p ~/nuclei-templates/
+	# устанавливаем или обновляем шаблоны написанные сообществом
+	if [[ $COMUNITY_ADDITIONAL_NUCLEI_TEMPLATES == "true" && -n $install_tools ]]; then
+		printf "\n\n${bgreen}#######################################################################${reset}\n"
+		printf "${bblue} Обновление шаблонов от сообщества nuclei ${reset}\n\n"
+		mkdir -p ~/nuclei-templates/
+		eval target_directory="~/nuclei-comunitu-template/"
+		# Список URL-ов репозиториев
+		# взято от сюда https://github.com/xm1k3/cent
+		repositories=(
+			"https://github.com/0x727/ObserverWard"
+			"https://github.com/0xAwali/Virtual-Host"
+			"https://github.com/0xPugazh/my-nuclei-templates"
+			"https://github.com/0xmaximus/final_freaking_nuclei_templates"
+			"https://github.com/1in9e/my-nuclei-templates"
+			"https://github.com/wr00t/templates"
+			"https://github.com/ARPSyndicate/kenzer-templates"
+			"https://github.com/Akokonunes/Private-Nuclei-Templates"
+			"https://github.com/Arvinthksrct/alltemplate"
+			"https://github.com/AshiqurEmon/nuclei_templates"
+			"https://github.com/CharanRayudu/Custom-Nuclei-Templates"
+			"https://github.com/DoubleTakes/nuclei-templates"
+			"https://github.com/Elsfa7-110/mynuclei-templates"
+			"https://github.com/ExpLangcn/NucleiTP"
+			"https://github.com/Harish4948/Nuclei-Templates"
+			"https://github.com/Hunt2behunter/nuclei-templates"
+			"https://github.com/Jagomeiister/nuclei-templates"
+			"https://github.com/JoshMorrison99/url-based-nuclei-templates"
+			"https://github.com/Kaue-Navarro/Templates-kaue-nuclei"
+			"https://github.com/KeepHowling/all_freaking_nuclei_templates"
+			"https://github.com/Lopseg/nuclei-c-templates"
+			"https://github.com/MR-pentestGuy/nuclei-templates"
+			"https://github.com/NightRang3r/misc_nuclei_templates"
+			"https://github.com/NitinYadav00/My-Nuclei-Templates"
+			"https://github.com/Odayex/Random-Nuclei-Templates"
+			"https://github.com/PedroF-369/nuclei_templates"
+			"https://github.com/R-s0n/Custom_Vuln_Scan_Templates"
+			"https://github.com/Saimonkabir/Nuclei-Templates"
+			"https://github.com/Saptak9983/Nuclei-Template"
+			"https://github.com/ShangRui-hash/my-nuclei-templates"
+			"https://github.com/freakyclown/Nuclei_templates"
+			"https://github.com/SirAppSec/nuclei-template-generator-log4j"
+			"https://github.com/Str1am/my-nuclei-templates"
+			"https://github.com/SumedhDawadi/Custom-Nuclei-Template"
+			"https://github.com/System00-Security/backflow"
+			"https://github.com/adampielak/nuclei-templates"
+			"https://github.com/aels/CVE-2022-37042"
+			"https://github.com/alexrydzak/rydzak-nuclei-templates"
+			"https://github.com/ayadim/Nuclei-bug-hunter"
+			"https://github.com/badboy-sft/badboy_17-Nuclei-Templates-Collection"
+			"https://github.com/binod235/nuclei-templates-and-reports"
+			"https://github.com/blazeinfosec/nuclei-templates"
+			"https://github.com/brinhosa/brinhosa-nuclei-templates"
+			"https://github.com/c-sh0/nuclei_templates"
+			"https://github.com/cipher387/juicyinfo-nuclei-templates"
+			"https://github.com/clarkvoss/Nuclei-Templates"
+			"https://github.com/coldrainh/nuclei-ByMyself"
+			"https://github.com/d3sca/Nuclei_Templates"
+			"https://github.com/daffainfo/my-nuclei-templates"
+			"https://github.com/damon-sec/Nuclei-templates-Collection"
+			"https://github.com/dk4trin/templates-nuclei"
+			"https://github.com/drfabiocastro/certwatcher-templates"
+			"https://github.com/ekinsb/Nuclei-Templates"
+			"https://github.com/erickfernandox/nuclei-templates"
+			"https://github.com/esetal/nuclei-bb-templates"
+			"https://github.com/ethicalhackingplayground/erebus-templates"
+			"https://github.com/geeknik/nuclei-templates-1"
+			"https://github.com/geeknik/the-nuclei-templates"
+			"https://github.com/glyptho/templatesallnuclei"
+			"https://github.com/im403/nuclei-temp"
+			"https://github.com/javaongsan/nuclei-templates"
+			"https://github.com/justmumu/SpringShell"
+			"https://github.com/kabilan1290/templates"
+			"https://github.com/kh4sh3i/CVE-2022-23131"
+			"https://github.com/luck-ying/Library-YAML-POC"
+			"https://github.com/mastersir-lab/nuclei-yaml-poc"
+			"https://github.com/mbskter/Masscan2Httpx2Nuclei-Xray"
+			"https://github.com/medbsq/ncl"
+			"https://github.com/meme-lord/Custom-Nuclei-Templates"
+			"https://github.com/n1f2c3/mytemplates"
+			"https://github.com/notnotnotveg/nuclei-custom-templates"
+			"https://github.com/obreinx/nuceli-templates"
+			"https://github.com/optiv/mobile-nuclei-templates"
+			"https://github.com/panch0r3d/nuclei-templates"
+			"https://github.com/peanuth8r/Nuclei_Templates"
+			"https://github.com/pentest-dev/Profesional-Nuclei-Templates"
+			"https://github.com/pikpikcu/nuclei-templates"
+			"https://github.com/ping-0day/templates"
+			"https://github.com/praetorian-inc/chariot-launch-nuclei-templates"
+			"https://github.com/ptyspawnbinbash/template-enhancer"
+			"https://github.com/rafaelcaria/Nuclei-Templates"
+			"https://github.com/rafaelwdornelas/my-nuclei-templates"
+			"https://github.com/rahulkadavil/nuclei-templates"
+			"https://github.com/randomstr1ng/nuclei-sap-templates"
+			"https://github.com/redteambrasil/nuclei-templates"
+			"https://github.com/ree4pwn/my-nuclei-templates"
+			"https://github.com/ricardomaia/nuclei-template-generator-for-wordpress-plugins"
+			"https://github.com/sadnansakin/my-nuclei-templates"
+			"https://github.com/securitytest3r/nuclei_templates_work"
+			"https://github.com/sharathkramadas/k8s-nuclei-templates"
+			"https://github.com/shifa123/detections"
+			"https://github.com/sl4x0/NC-Templates"
+			"https://github.com/smaranchand/nuclei-templates"
+			"https://github.com/soapffz/myown-nuclei-poc"
+			"https://github.com/soumya123raj/Nuclei"
+			"https://github.com/souzomain/mytemplates"
+			"https://github.com/tamimhasan404/Open-Source-Nuclei-Templates-Downloader"
+			"https://github.com/test502git/log4j-fuzz-head-poc"
+			"https://github.com/th3r4id/nuclei-templates"
+			"https://github.com/thebrnwal/Content-Injection-Nuclei-Script"
+			"https://github.com/thecyberneh/nuclei-templatess"
+			"https://github.com/thelabda/nuclei-templates"
+			"https://github.com/boobooHQ/private_templates"
+			"https://github.com/rix4uni/BugBountyTips"
+			"https://github.com/Lu3ky13/Authorization-Nuclei-Templates"
+			"https://github.com/bug-vs-me/nuclei"
+			"https://github.com/topscoder/nuclei-wordfence-cve"
+			"https://github.com/toramanemre/apache-solr-log4j-CVE-2021-44228"
+			"https://github.com/toramanemre/log4j-rce-detect-waf-bypass"
+			"https://github.com/trickest/log4j"
+			"https://github.com/wasp76b/nuclei-templates"
+			"https://github.com/wr00t/templates"
+			"https://github.com/xinZa1/template"
+			"https://github.com/yarovit-developer/nuclei-templates"
+			"https://github.com/yavolo/nuclei-templates"
+			"https://github.com/z3bd/nuclei-templates"
+			"https://github.com/zer0yu/Open-PoC"
+			"https://github.com/bhataasim1/PersonalTemplates"
+			"https://github.com/pikpikcu/my-nuclei-templates"
+			"https://github.com/SirBugs/Priv8-Nuclei-Templates"
+		)
+		
+		# Перебираем каждый URL и клонируем репозиторий в целевую директорию
+		for repo_url in "${repositories[@]}"; do
+			# Извлекаем имя репозитория из URL-а
+			repo_name=$(basename "$repo_url")
+			
+			# Формируем полный путь к целевой директории
+			destination="$target_directory/$repo_name"
+			
+			# Клонируем репозиторий
+			git clone "$repo_url" "$destination"
+			
+			# Проверяем статус выполнения команды git clone
+			if [ $? -eq 0 ]; then
+				printf "Репозиторий %s успешно склонирован в %s\n" "$repo_name" "$destination"
+			else
+				printf "Ошибка при клонировании репозитория %s\n" "$repo_name"
+			fi
+		done
 	fi
-	eval webanalyze -update
-
+	# загружаем файл с технологиями для инструмента webanalyze
+	wget --no-clobber -P $tools "https://raw.githubusercontent.com/rverton/webanalyze/master/technologies.json" &>>"$DEBUG_FILE"
 }
 
-
+if [ -n $target_domain ]; then
 	# создаем нужные директории если их нет. если есть не создаем
 	if ! [ -d $recon_dir/$target_domain/ ]; then
 		mkdir -p $recon_dir
@@ -822,7 +965,6 @@ function tools_update_resurce(){
 		mkdir -p $recon_dir/$target_domain/webs
 		mkdir -p $recon_dir/$target_domain/scan
 		mkdir -p $recon_dir/$target_domain/vulns
-		mkdir -p $recon_dir/$target_domain/vulns/xss
 		mkdir -p $recon_dir/$target_domain/hosts
 		mkdir -p $recon_dir/$target_domain/fuzzing
 		mkdir -p $recon_dir/$target_domain/scan/webtechnologies
@@ -830,7 +972,6 @@ function tools_update_resurce(){
 		mkdir -p $recon_dir/$target_domain/osint
 		mkdir -p $recon_dir/$target_domain/scan/header_sec
 		mkdir -p $recon_dir/$target_domain/cidr
-		mkdir -p $recon_dir/$target_domain/notes
 		mkdir -p $recon_dir/$target_domain/directories
 
 		cd $recon_dir/$target_domain # переходим в папку рекона
@@ -850,11 +991,9 @@ function tools_update_resurce(){
 		echo " "
 	fi
 
-	
-
 	# обнуляем debug
-	echo "start recon to ${target_domain}" > $recon_dir/$target_domain/.tmp/debug
-}
+	echo "start recon to ${target_domain}" >| "$recon_dir/$target_domain/tmp/debug"
+fi
 
 function scope_domain(){
 	if [[ -n $scope_list ]]; then
@@ -1005,7 +1144,7 @@ function subdomain_bruteforce(){
 function zonetransfer_takeovers(){
 	if [[ $ZONETRANSFER == "true" ]]; then
 		echo " --= zonetransfer takeovers =--"
-		python3 $tools/dnsrecon/dnsrecon.py -d $target_domain -a -j $recon_dir/$target_domain/subdomain/zonetransfer.json &>> $DEBUG_FILE
+
 		cat $recon_dir/$target_domain/webs/webs.txt | nuclei -silent -t ~/nuclei-templates/takeovers/ -r $dns_resolver -o $recon_dir/$target_domain/subdomain/subtakeover.txt &>> $DEBUG_FILE
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
@@ -1153,6 +1292,17 @@ function endpoint_enum_agressive(){
 			cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | gospider -u web --cookie $cookie -d $ENDP_ENUM_GOSPIDER_DEPTH -o $recon_dir/$target_domain/webs/endpoint
 			cat $recon_dir/$target_domain/webs/endpoint/* | egrep -io "http.*?" > $recon_dir/$target_domain/.tmp/gospider_endpoint.txt
 		fi
+		if [[ $ENDP_ENUM_PARAMSPIDER == "true" ]]; then
+			interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads $IN_PARAMSPIDER -c "python3 $tools/ParamSpider/paramspider.py --level high -d _target_ | egrep -io 'http.*?' >> $recon_dir/$target_domain/.tmp/paramspider_endpoint.txt" -v
+			mv $recon_dir/$target_domain/output/ $recon_dir/$target_domain/webs/output_paramspider
+		fi
+		if [[ $ARJUN_PARAMETR_DISCOVERY == "true" ]]; then
+			cat $recon_dir/$target_domain/.tmp/gauplus_endpoint.txt | grep -Eo 'https?://[^ ]+[^] ]' | grep -vE '\.(png|jpg|jpeg|gif|swf|woff|gif|svg|js|css|html|ico)' | grep -vE '/$|[:;{}[\]+,]' |  grep -vE ';$' | anew > $recon_dir/$target_domain/.tmp/preparing_parameters_for_arjun.txt
+			#interlace -tL $recon_dir/$target_domain/.tmp/preparing_parameters_for_arjun.txt -threads $IN_ARJUN -c "arjun -u "_target_" -oT $recon_dir/$target_domain/.tmp/arjun_parametr_endpoint.txt"
+			arjun -i $recon_dir/$target_domain/.tmp/preparing_parameters_for_arjun.txt -oT $recon_dir/$target_domain/.tmp/arjun_parametr_endpoint.txt
+			cp $recon_dir/$target_domain/.tmp/arjun_parametr_endpoint.txt $recon_dir/$target_domain/webs/arjun_parametr_url.txt
+			rm $recon_dir/$target_domain/.tmp/preparing_parameters_for_arjun.txt
+		fi
 		# функция обедеинения файлов и применение scope
 		scope_endpoint
 		# генерация списков слов на основе конечных точек
@@ -1234,7 +1384,7 @@ function jsfind(){
 		fi	
 		#Find DomXSS
 		if [[ $JS_FINDOM_XSS == "true" ]]; then
-			echo "" > $recon_dir/$target_domain/vulns/domxss_scan.txt
+			echo "" > $recon_dir/$target_domain/vulns/potential_domxss_scan.txt
 			#scan
 			for live_js_links in $(cat $recon_dir/$target_domain/js/live_js_links.txt)
 			do
@@ -1243,7 +1393,7 @@ function jsfind(){
 				SCAN=($(echo ${BODY} | grep -Eoin ${PATTERN}))
 				if [[ ! -z "${SCAN}" ]]; then
 					echo -en "---\n\033[0;32m[!] ${live_js_links}\033[0m\n${SCAN}\n"
-					echo -e "---\n${live_js_links}\n${SCAN}" >> $recon_dir/$target_domain/vulns/domxss_scan.txt
+					echo -e "---\n${live_js_links}\n${SCAN}" >> $recon_dir/$target_domain/vulns/potential_domxss_scan.txt
 				fi
 			done
 		fi
@@ -1252,21 +1402,42 @@ function jsfind(){
 		if [[ $JS_WAYBACK_SCAN == "true" ]]; then
 			mkdir -p $recon_dir/$target_domain/js/waybackjs
 			touch $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt
-			touch $recon_dir/$target_domain/js/waybackjs/live_waybackjs_link.txt
+
 			for js_links in $(cat $recon_dir/$target_domain/js/js_links.txt)
 				do
 					status_code=$(echo $js_links | httpx -x HEAD -status-code -silent -no-color | grep -oP '(?<=\[).*(?=\])')
 					if [[ $status_code != 200 ]]; then
-						echo "https://web.archive.org/web/20060102150405if_/$js_links" >> $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt
-						status_code2=$(echo "https://web.archive.org/web/20060102150405if_/$js_links" | httpx -x HEAD -status-code -silent -no-color | grep -oP '(?<=\[).*(?=\])')
-						if [[ $status_code2 == 200 ]]; then
-							echo "https://web.archive.org/web/20060102150405if_/$js_links" >> $recon_dir/$target_domain/js/waybackjs/live_waybackjs_link.txt
-						
-						fi
+
+						wayback_machine_js_links=$(curl https://web.archive.org/cdx/search/cdx?url=$js_links)
+
+						while IFS= read -r line; do
+							parts=($line)
+							timestamp="${parts[1]}"
+							url="${parts[2]}"
+
+							wayback_url="https://web.archive.org/web/${timestamp}if_/${url}"
+							echo "$wayback_url"
+
+						done < "$wayback_machine_js_links" >> "$recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt"
+
 					fi
 				done
-			interlace -tL $recon_dir/$target_domain/js/live_waybackjs_link.txt -threads $IN_JS_SECRET_FIND -c "python3 $tools/SecretFinder/SecretFinder.py -i _target_ -o cli >> $recon_dir/$target_domain/js/waybackjs_link_srcrets.txt" -v
-		fi
+
+			interlace -tL $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt -threads $IN_JS_SECRET_FIND -c "python3 $tools/SecretFinder/SecretFinder.py -i _target_ -o cli >> $recon_dir/$target_domain/js/waybackjs/waybackjs_link_srcrets.txt" -v
+			interlace -tL $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt -threads $IN_JS_LINK_FIND -c "echo 'Scanning _target_ Now' ; python3 ~/Tools/LinkFinder/linkfinder.py -d -i _target_ -o cli >> $recon_dir/$target_domain/js/waybackjs/endpoint_waybackjs_link.txt" -v
+
+			if [[ $JS_WAYBACK_FIND_VARS == "true" ]]; then
+				touch $recon_dir/$target_domain/js/waybackjs/waybackjs_vars.txt
+				
+				for waybackjs_link in $(cat $recon_dir/$target_domain/js/waybackjs/waybackjs_link.txt)
+					do
+						echo -e "\e[1;33m$waybackjs_link\n\e[32m";
+						result=$(curl -s $waybackjs_link | grep -Eo "var [a-zA-Z0-9_]+" | sort -u | cut -d" " -f2 | awk 'length($waybackjs_link) >= 3 {print $waybackjs_link}')
+						if [[ -n $result ]]; then
+							echo -e "\e[1;33m$waybackjs_link\n\e[32m \n $result" >> $recon_dir/$target_domain/js/waybackjs/waybackjs_vars.txt
+						fi
+					done
+		    fi
 
 			if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -1277,6 +1448,7 @@ function jsfind(){
 				-d "Scan Result JavaScrit done " \
 				$ntfy
 			fi
+		fi
 	else
 		echo "js find false"
 	fi
@@ -1285,7 +1457,7 @@ function jsfind(){
 function checkWAF(){
 	if [[ $CHECK_WAF == "true" ]]; then
 		echo "start check WAF"
-		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads 5 -c "wafw00f  _target_ | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" >> $recon_dir/$target_domain/.tmp/wafw00f.txt" -v
+		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads 5 -c "wafw00f  _target_ | sed -r 's/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g' >> $recon_dir/$target_domain/.tmp/wafw00f.txt" -v
 		cat $recon_dir/$target_domain/.tmp/wafw00f.txt | grep "The site" | anew $recon_dir/$target_domain/hosts/waf.txt
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
@@ -1478,20 +1650,21 @@ function header_grep(){
 	
 	if [[ $HEADER_GREP == "true" ]]; then
 		echo " start header grep "
-		mkdir -p $recon_dir/$target_domain/scan/header
-		cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | egrep -o '[a-z0-9.-]*[:][0-9]*$' > $recon_dir/$target_domain/.tmp/header_grep.txt
-		interlace -tL $recon_dir/$target_domain/.tmp/header_grep.txt -threads 5 -c "curl -A '$HEADER' -I _target_  -o $recon_dir/$target_domain/scan/header/_target_.txt" -v
+		mkdir -p $recon_dir/$target_domain/scan/header/
+		#cat $recon_dir/$target_domain/subdomain/subdomains.txt | egrep -o '[a-z0-9.-]*[:][0-9]*$' > $recon_dir/$target_domain/.tmp/header_grep.txt
+		cat $recon_dir/$target_domain/subdomain/subdomains.txt | fff --save -o $recon_dir/$target_domain/scan/header/
 	else
 		echo "header grep false"
 	fi
 }
 
 function webtehnologies(){
+
 	if [[ $CHECK_WEBTEHNOLOGIES == "true" ]]; then
 		echo " start check webtechnologies"
 		echo "$reconwtf_dir"
 		mkdir -p $recon_dir/$target_domain/scan/webtechnologies
-		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads 5 -c "webanalyze -host _target_ -apps $reconwtf_dir/technologies.json -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/webtehnologies.txt" -v
+		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads 5 -c "webanalyze -host _target_ -apps $tools/technologies.json -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/webtehnologies.txt" -v
 		rm $reconwtf_dir/*.json
 		echo " start check nuclei webtechnologies"
 		#cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/technologies -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/nuclei_webtehnologies.txt
@@ -1582,8 +1755,21 @@ function domain_info(){
 	if [[ $DOMAIN_INFO == "true" ]]; then
 		echo "start domain info"
 		echo "$domain"
-		lynx -dump "https://viewdns.info/whois/?domain=$target_domain" | tail -n +20 > osint/domain_info_general.txt
+		mkdir -p $recon_dir/$target_domain/osint/dns
+		mkdir -p $recon_dir/$target_domain/osint/whois
+
+		#lynx -dump "https://viewdns.info/whois/?domain=$target_domain" | tail -n +20 > osint/domain_info_general.txt
 	
+		file="$recon_dir/$target_domain/subdomain/subdomains.txt"
+
+		# Чтение файла построчно и выполнение команды для каждой строки
+		for subdomain_osint in $(cat "$file"); do
+			if [ -n "$subdomain_osint" ]; then
+				bash $tools/DHVAdmin/dhv.sh -d $subdomain_osint -whois > "$recon_dir/$target_domain/osint/whois/whois_$subdomain_osint.txt"
+				bash $tools/DHVAdmin/dhv.sh -d $subdomain_osint -dns > "$recon_dir/$target_domain/osint/dns/dns_$subdomain_osint.txt"
+			fi
+		done
+
 		if [[ $ntfy_end_modules == "true" ]]; then
 
 			curl \
@@ -1699,7 +1885,7 @@ function metadata(){
 
 
 function cors(){
-	python3 $tools/Corsy/corsy.py -i $recon_dir/$target_domain/webs/webs.txt > $recon_dir/$target_domain/webs/cors.txt
+	python3 $tools/Corsy/corsy.py -i $recon_dir/$target_domain/webs/webs.txt | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" > $recon_dir/$target_domain/webs/cors.txt
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -1727,6 +1913,60 @@ function openreditrct(){
 		fi
 
 }
+
+function nucleifuzzer(){
+		if [[ $NUCLEI_FUZZING == "true" ]]; then
+		echo "start nucleifuzzing"
+		
+			cat $recon_dir/$target_domain/gf/xss.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/xss/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/xss.txt
+			cat $recon_dir/$target_domain/gf/ssti.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/ssti/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/ssti.txt
+			cat $recon_dir/$target_domain/gf/ssrf.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/ssrf/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/ssrf.txt
+			cat $recon_dir/$target_domain/gf/sqli.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/sqli/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/sqli.txt
+
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/xxe/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/xxe.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/rfi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/rfi.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/redirect/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/nuclei_redirect.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/lfi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/lfi.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/csti/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/csti.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/crlf/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/crlf.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/cmdi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/cmdi.txt
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title nucleifuzzing scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result nucleifuzzing done " \
+			$ntfy
+		fi
+
+	else
+		echo "nucleifuzzing false"
+	fi
+}
+
+function apikey_check(){
+		if [[ $APIKEY_CHECK == "true" ]]; then
+		echo "start APIKEY_CHECK"
+
+			trufflehog filesystem $recon_dir/$target_domain/js/ >> $recon_dir/$target_domain/vulns/trufflehog_js_api_disclosure.txt
+
+		if [[ $ntfy_end_modules == "true" ]]; then
+
+			curl \
+			-H "Title: $ntfy_title APIKEY_CHECK scan result!" \
+			-H "Priority: $ntfy_priority" \
+			-H "Tags: $ntfy_tags" \
+			-d "Scan Result APIKEY_CHECK done " \
+			$ntfy
+		fi
+
+	else
+		echo "nucleifuzzing false"
+	fi
+}
+
 
 function x4xxbypass(){
 
@@ -2018,7 +2258,7 @@ function archive_scan(){
 		rm -r $recon_dir/$target_domain/archive/subdomain
 		rm -r $recon_dir/$target_domain/archive/vulns
 		rm -r $recon_dir/$target_domain/archive/webs
-		#rm -r $recon_dir/$target_domain/archive/notes
+		
 		rm -r $recon_dir/$target_domain/archive/directories
 
 		mkdir -p $recon_dir/$target_domain/archive
@@ -2036,7 +2276,7 @@ function archive_scan(){
 		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
 		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
 		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
-		#cp -r $recon_dir/$target_domain/notes $recon_dir/$target_domain/archive/notes
+		
 		cp -r $recon_dir/$target_domain/directories $recon_dir/$target_domain/archive/directories
 
 		date=$(date +"%Y.%m.%d.%k")
@@ -2068,7 +2308,7 @@ function archive_scan(){
 		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
 		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
 		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
-		#cp -r $recon_dir/$target_domain/notes $recon_dir/$target_domain/archive/notes
+		
 		cp -r $recon_dir/$target_domain/directories $recon_dir/$target_domain/archive/directories
 		# gf hosts js osint scan screenshots subdomain  vulns webs
 
@@ -2089,7 +2329,7 @@ function archive_md_lists(){
 	cp $recon_dir/$target_domain/README.md $recon_dir/$target_domain/archive/back_md/$date/README.md
 	cp $recon_dir/$target_domain/DIFF_RESULT.md $recon_dir/$target_domain/archive/back_md/$date/DIFF_RESULT.md
 	cp $recon_dir/$target_domain/CheckList.md $recon_dir/$target_domain/archive/back_md/$date/CheckList.md
-	cp $recon_dir/$target_domain/notes.md $recon_dir/$target_domain/archive/back_md/$date/notes.md
+	
 
 }
 
@@ -2114,7 +2354,7 @@ function github_get_private_scan(){
 			git remote add origin https://github.com/$you_git_username/$private_git_repos_name.git
 			git add .
 			git commit -m "private recon repo init"
-			git push  https://$you_git_acces_token@github.com/$you_git_username/$private_git_repos_name.git
+			git push  git@github.com:$you_git_username/$private_git_repos_name.git
 			cd $reconwtf_dir
 		fi
 	else
@@ -2185,41 +2425,45 @@ MULTILINE-COMMENT
 		x4xxbypass
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		Subdomain_enum_passive
-		Subdomain_enum
-		subdomain_permytation
-		subdomain_bruteforce
-		SubRresult
-		webs
-		zonetransfer_takeovers
-		s3bucket
-		scan_hosts
-		visual_indentification
-		endpoint_enum_passive
-		endpoint_enum_agressive
-		dirbuster
-		jsfind
-		checkWAF
-		ips
-		cidr_recon
-		testssl
-		scan_port
-		ip2provider
-		nuclei_check
-		header_sec
-		header_grep
-		webtehnologies
-		fuzzing
-		url_gf
-		url_ext_file
+		#Subdomain_enum_passive
+		#Subdomain_enum
+		#subdomain_permytation
+		#subdomain_bruteforce
+		#SubRresult
+		#webs
+		#zonetransfer_takeovers
+		#s3bucket
+		#scan_hosts
+		#visual_indentification
+		#endpoint_enum_passive
+		#endpoint_enum_agressive
+		#dirbuster
+		#jsfind
+		#checkWAF
+		#ips
+		#cidr_recon
+		#testssl
+		#scan_port
+		#ip2provider
+		#nuclei_check
+		#header_sec
+		#header_grep
+		#webtehnologies
+		#fuzzing
+		#url_gf
+		#url_ext_file
 		domain_info
-		emaifind
-		google_dorks
-		github_dorks
-		metadata
-		cors
-		openreditrct
-		x4xxbypass
+		#emaifind
+		#google_dorks
+		#github_dorks
+		#metadata
+		#cors
+		# тут идут активные атаки
+		#openreditrct
+		#x4xxbypass
+		#nucleifuzzer
+		#apikey_check
+		# тут заканчиваюся атаки
 		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
 		Subdomain_enum_passive
@@ -2247,8 +2491,8 @@ MULTILINE-COMMENT
 	if [[ -n $check_all_tools || -n $install_tools ]]; then
 		echo ""
 	else
-		archive_scan
-		archive_md_lists
+		#archive_scan
+		#archive_md_lists
 		github_get_private_scan
 	fi
 }
