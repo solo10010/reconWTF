@@ -2425,44 +2425,44 @@ MULTILINE-COMMENT
 		x4xxbypass
 		clearempity
 	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
-		#Subdomain_enum_passive
-		#Subdomain_enum
-		#subdomain_permytation
-		#subdomain_bruteforce
-		#SubRresult
-		#webs
-		#zonetransfer_takeovers
-		#s3bucket
-		#scan_hosts
-		#visual_indentification
-		#endpoint_enum_passive
-		#endpoint_enum_agressive
-		#dirbuster
-		#jsfind
-		#checkWAF
-		#ips
-		#cidr_recon
-		#testssl
-		#scan_port
-		#ip2provider
-		#nuclei_check
-		#header_sec
-		#header_grep
-		#webtehnologies
-		#fuzzing
-		#url_gf
-		#url_ext_file
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		webs
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts
+		visual_indentification
+		endpoint_enum_passive
+		endpoint_enum_agressive
+		dirbuster
+		jsfind
+		checkWAF
+		ips
+		cidr_recon
+		testssl
+		scan_port
+		ip2provider
+		nuclei_check
+		header_sec
+		header_grep
+		webtehnologies
+		fuzzing
+		url_gf
+		url_ext_file
 		domain_info
-		#emaifind
-		#google_dorks
-		#github_dorks
-		#metadata
-		#cors
+		emaifind
+		google_dorks
+		github_dorks
+		metadata
+		cors
 		# тут идут активные атаки
-		#openreditrct
-		#x4xxbypass
-		#nucleifuzzer
-		#apikey_check
+		openreditrct
+		x4xxbypass
+		nucleifuzzer
+		apikey_check
 		# тут заканчиваюся атаки
 		clearempity
 	elif [[ -n $osint ]]; then # запустить только осинт цели трогая ее сканированиями
