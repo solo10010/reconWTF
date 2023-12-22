@@ -5,28 +5,29 @@ eval . ./config.conf # defaul config file
 
 function help(){
 	echo ""
-	echo " Usage: ./reconwtf.sh [options...] -d <domain> -m <companu tld>-l <list.txt> -x <scope.txt> 
+	echo " Применение: ./reconwtf.sh [options...] -d <domain> -m <companu tld>-l <list.txt> -x <scope.txt> 
 			-c <cookie> -f <config.conf> -u <dir out> -r -s -p -a -o -v -h"
 	echo ""
-	echo "  -d, --domain 		<domain> 	domain target 'example.com' "
-	echo "  -m, --company 	<name>		copany name 'Tesla inc' see https://www.whoxy.com/tesla.com"
-	echo "  -x, --scope 		<scope.txt> 	Out of Scope format \.vk.com clear vk subdomain \vk.com clear all vk.com"
-	echo "  -g, --config		<config.conf>	config file '-g dir/config2.conf' "
-	echo "  -c, --cookie 		<cookie>  	cookie -c 'PHPSESSIONID=qweqweqwe'"
-	echo "  -cidr, --cidr		<ip range>	target ip range 192.49,128.0/16"
-	echo "  -n, --name            <trget_name>    target name for example target1"
+	echo "  -d, --domain 		<domain> 	целевой домен 'example.com' "
+	echo "  -m, --company 	<name>		Название компании 'Tesla inc' Узнать https://www.whoxy.com/tesla.com"
+	echo "  -x, --scope 		<scope.txt> 	Формат вне области применения \.vk.com очистить vk домены \vk.com очистить все vk.com"
+	echo "  -g, --config		<config.conf>	конфигурационный файл '-g dir/config2.conf' "
+	echo "  -c, --cookie 		<cookie>  	куки -c 'PHPSESSIONID=qweqweqwe'"
+	echo "  -cidr, --cidr		<ip range>	целевой диапазон IP-адресов 192.49,128.0/16"
+	echo "  -n, --name            <trget_name>    целевое имя, например vdp-inmpbi"
 	echo ""
-	echo "  -r, --recon-full	 		full target exploration ( with the use of attacks ) "
-	echo "  -s, --subdimain-search	 	only subdomain search, resolution, and subdomain capture "
-	echo "  -p, --passive 			only passive methods that do not affect the target "
-	echo "  -a, --active				full intelligence with the use of attacks "
-	echo "  -o, --osint				minimal exploration with the use of OSINT "
+	echo "  -r, --recon-full	 		полная разведка цели (с применением атак) "
+	echo "  -rs, --recon-speed	 		Быстрая разведка (только быстрые методы) "
+	echo "  -s, --subdimain-search	 	только поиск субдоменов, разрешение и захват субдоменов "
+	echo "  -p, --passive 			только пассивные методы, не влияющие на цель "
+	echo "  -a, --active				полный интеллект с использованием атак "
+	echo "  -o, --osint				минимальная разведка с использованием OSINT "
 	echo ""
-	echo "  -in, --install			Install all tools "
-	echo "  -ct, --check-tools			Verify that the tools are installed correctly "
+	echo "  -in, --install			Установить все инструменты "
+	echo "  -ct, --check-tools			Убедитесь, что инструменты установлены правильно "
 	echo ""
-	echo "  -v, --version				reconWTF version "
-	echo "  -h, --help 				help"
+	echo "  -v, --version				reconWTF версия "
+	echo "  -h, --help 				справка"
 	echo ""
 	echo "  Remember set your api keys:"
 	echo ""
@@ -39,6 +40,7 @@ function help(){
 	echo "  theHarvester 		|		(~/Tools/theHarvester/api-keys.yml)"
 	echo "  H8mail 		|		(~/Tools/h8mail_config.ini)"
 	echo "  sigurlfind3r 		|		(~/.config/sigurlfind3r/conf.yaml)"
+	echo "  GoogleDorker 		|		($tools/GoogleDorker/google_dorker.yaml)"
 	echo ""
 	exit
 }
@@ -60,8 +62,8 @@ case $key in
     shift # past value
     if [[ -z $target_domain ]]
     then
-	    echo " -d, --domain this parameter must have the value!"
-	    echo "  -h, --help help to reconWTF"
+	    echo " -d, --domain этот параметр должен иметь значение!"
+	    echo "  -h, --help помощь по reconWTF"
 	    exit
     fi
     ;;
@@ -71,8 +73,8 @@ case $key in
     shift # past value
     if [[ -z $company ]]
     then
-	    echo " -c, --company  this parameter must have the value!"
-	    echo "  -h, --help help to reconWTF"
+	    echo " -c, --company  этот параметр должен иметь значение!"
+	    echo "  -h, --help помощь по reconWTF"
 	    exit
     fi
     ;;
@@ -82,8 +84,8 @@ case $key in
     shift # past value
     if [[ -z $cidr ]]
     then
-	    echo " -cidr, --cidr  target ip range 192.49,128.0/16"
-	    echo "  -h, --help help to reconWTF"
+	    echo " -cidr, --cidr  целевой диапазон IP-адресов 192.49,128.0/16"
+	    echo "  -h, --help помощь по reconWTF"
 	    exit
     fi
     ;;
@@ -93,8 +95,8 @@ case $key in
     shift # past value
     if [[ -z $scope_list ]]
     then
-	    echo " -x, --scope this parameter must have the value!"
-	    echo "  -h, --help help to reconWTF"
+	    echo " -x, --scope этот параметр должен иметь значение!"
+	    echo "  -h, --help помощь по reconWTF"
 	    exit
     else
 	    echo " "
@@ -118,13 +120,18 @@ case $key in
     shift # past value
     if [[ -z $name ]]
     then
-	    echo " -n, --name  target name for example target1"
-	    echo "  -h, --help help to reconWTF"
+	    echo " -n, --name  имя цели, например target1"
+	    echo "  -h, --help помощь по reconWTF"
 	    exit
     fi
     ;;
     -r|--recon-full) # полная разведка без атак
     recon_full="$1"
+    shift # past argument
+    shift # past value
+    ;;
+	-rs|--recon-speed) # наиболее полная разведка но побыстрее
+    recon_speed="$1"
     shift # past argument
     shift # past value
     ;;
@@ -154,8 +161,8 @@ case $key in
     shift # past value
     if [[ -z $cookie ]]
     then
-	    echo " -c, --cookie this parameter must have the value!"
-	    echo "  -h, --help help to reconWTF"
+	    echo " -c, --cookie этот параметр должен иметь значение!"
+	    echo "  -h, --help помощь по reconWTF"
 	    exit
     fi
     ;;
@@ -165,7 +172,7 @@ case $key in
     shift # past value
     if [[ -z $version ]]
     then 
-	    printf "\n reconWTF version $reconWTF_version \n\n"
+	    printf "\n reconWTF версия $reconWTF_version \n\n"
 	    exit
     fi
     ;;
@@ -185,7 +192,7 @@ case $key in
     shift # past value
     if [[ -n $help ]]
     then 
-	    echo " You can't use arguments here!!!"
+	    echo " Здесь нельзя использовать аргументы!!!"
 	    echo "  Usage: reconwtf.sh -h, --help"
 	    exit
     else
@@ -193,7 +200,7 @@ case $key in
     fi
     ;;
     *)
-    echo " flag provided but not defined: ${key}"
+    echo " флаг предоставлен, но не определен: ${key}"
     echo "  Usage: reconwtf.sh -h, --help"
     exit
     ;;
@@ -232,7 +239,7 @@ DEBUG_FILE=$recon_dir/$target_domain/.tmp/debug #файл для дебага
 function check_tools(){
 
 	printf "\n\n${bgreen}#######################################################################${reset}\n"
-	printf "${bblue} Checking installed tools ${reset}\n\n"
+	printf "${bblue} Проверка установленных инструментов ${reset}\n\n"
 
 	allinstalled=true
 
@@ -259,6 +266,7 @@ function check_tools(){
 	[ -f "$tools/webscreenshot/webscreenshot.py" ] || { printf "${bred} [*] webscreenshot		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/brutespray/brutespray.py" ] || { printf "${bred} [*] brutespray		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/DHVAdmin/dhv.sh" ] || { printf "${bred} [*] dhv.sh		[NO]${reset}\n"; allinstalled=false;}
+	[ -f "$tools/GoogleDorker/dorker/dorker.py" ] || { printf "${bred} [*] GoogleDorker		[NO]${reset}\n"; allinstalled=false;}
 	type -P dirdar &>/dev/null || { printf "${bred} [*] dirdar		[NO]${reset}\n"; allinstalled=false;}
 	type -P github-endpoints &>/dev/null || { printf "${bred} [*] github-endpoints	[NO]${reset}\n"; allinstalled=false;}
 	type -P github-subdomains &>/dev/null || { printf "${bred} [*] github-subdomains	[NO]${reset}\n"; allinstalled=false;}
@@ -320,6 +328,7 @@ function check_tools(){
 	type -P fff &>/dev/null || { printf "${bred} [*] fff  [NO]${reset}\n"; allinstalled=false;}
 	type -P whatweb &>/dev/null || { printf "${bred} [*] whatweb  [NO]${reset}\n"; allinstalled=false;}
 	type -P arjun &>/dev/null || { printf "${bred} [*] arjun  [NO]${reset}\n"; allinstalled=false;}
+	type -P smap &>/dev/null || { printf "${bred} [*] smap  [NO]${reset}\n"; allinstalled=false;}
 	
 	
 
@@ -381,6 +390,7 @@ function install_tools(){
 	gotools["proxi"]="go install github.com/nicksherron/proxi@latest"
 	gotools["mubeng"]="go install ktbs.dev/mubeng/cmd/mubeng@latest"
 	gotools["fff"]="go install github.com/tomnomnom/fff@latest"
+	gotools["smap"]="go install -v github.com/s0md3v/smap/cmd/smap@latest"
 
 
 	declare -A repos
@@ -417,6 +427,7 @@ function install_tools(){
 	repos["wordlist"]="solo10010/wordlist"
 	repos["ParamSpider"]="0xKayala/ParamSpider"
 	repos["solo-nuclei-templates"]="solo10010/solo-nuclei-templates"
+	repos["GoogleDorker"]="sanjai-AK47/GoogleDorker"
 
 	declare -A pip_tools
 	pip_tools["dnsgen"]="dnsgen"
@@ -460,6 +471,7 @@ function install_tools(){
 	pip_tools["fastapi"]="fastapi==0.103.2"
 	pip_tools["censys"]="censys==2.2.7"
 	pip_tools["arjun"]="arjun"
+	pip_tools["google_api_python"]="google_api_python_client==2.98.0"
 
 
 	dir=${tools}
@@ -1007,7 +1019,7 @@ function scope_domain(){
 function SubRresult(){
 	echo " разрешаем поддомены "
 	# в последний раз разрешаем поддомены и записываем в конечный файл
-	cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | egrep "\.$target_domain" | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
+	cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | grep -E ".$target_domain$" | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
 	echo "$target_domain" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
 	scope_domain
 
@@ -1201,8 +1213,31 @@ function s3bucket(){
 	fi
 }
 
-function scan_hosts_passive(){
-	shodan init $SHODAN_API_KEY
+function scan_hosts_passive() {
+    while IFS= read -r line_smap; do
+        # Выполнение smap и awk для каждой строки
+        smap_output=$(smap "$line_smap" | awk '/^[0-9]/ {print $1, $2, $3, $4}')
+
+        # Проверить, что $smap_output не пуст
+        if [ -n "$smap_output" ]; then
+            # Разбить результат на строки и обработать каждую строку отдельно
+            while read -r port_info; do
+                # Отфильтровать цифры порта и вывести результат
+                port_info=$(echo "$port_info" | grep -oP '^[0-9]+')
+                # Проверить, что $port_info не пуст
+                if [ -n "$port_info" ]; then
+                    # Вывести результат и сохранить в файл
+                    echo "$line_smap:$port_info" | anew "$recon_dir/$target_domain/.tmp/passive_scan_hosts.txt"
+                else
+                    echo "No valid port info for $line_smap"
+                fi
+            done <<< "$smap_output"
+        else
+            echo "No port info for $line_smap"
+        fi
+    done < "$recon_dir/$target_domain/subdomain/subdomains.txt"
+
+    cat "$recon_dir/$target_domain/.tmp/passive_scan_hosts.txt" | httprobe -prefer-https > "$recon_dir/$target_domain/webs/webs_uncommon_ports.txt"
 }
 
 function scan_hosts(){
@@ -1229,7 +1264,7 @@ function scan_hosts(){
 function visual_indentification(){
 	if [[ $WEB_VISUAL_INDENTIFICATION == "true" ]]; then
 		echo " start visual indentification "
-		python3 $tools/webscreenshot/webscreenshot.py -i $recon_dir/$target_domain/webs/webs_uncommon_ports.txt --no-error-file -r chromium --no-xserver
+		python3 $tools/webscreenshot/webscreenshot.py -i $recon_dir/$target_domain/subdomain/subdomains.txt --no-error-file -r chromium --no-xserver
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -1664,10 +1699,15 @@ function webtehnologies(){
 		echo " start check webtechnologies"
 		echo "$reconwtf_dir"
 		mkdir -p $recon_dir/$target_domain/scan/webtechnologies
-		interlace -tL $recon_dir/$target_domain/webs/webs_uncommon_ports.txt -threads 5 -c "webanalyze -host _target_ -apps $tools/technologies.json -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/webtehnologies.txt" -v
+
+		curl -O https://raw.githubusercontent.com/rverton/webanalyze/master/technologies.json
+
+		# для просто субдоменов
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "nuclei -u _target_ -silent -t $tools/solo-nuclei-templates/technologies/ -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/_target_.txt" -v
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "webanalyze -host _target_ -apps technologies.json -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/_target_.txt" -v
+
 		rm $reconwtf_dir/*.json
-		echo " start check nuclei webtechnologies"
-		#cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | nuclei -silent -t ~/nuclei-templates/technologies -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/nuclei_webtehnologies.txt
+		rm technologies.json
 	
 		if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -2371,9 +2411,7 @@ function init(){ # инициализация разведки на основе
 	if [[ -n $install_tools ]]; then
 		install_tools
 	fi
-	<< 'MULTILINE-COMMENT'
 
-MULTILINE-COMMENT
 
 	check_tools
 	tools_update_resurce
@@ -2424,7 +2462,7 @@ MULTILINE-COMMENT
 		metadata
 		x4xxbypass
 		clearempity
-	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт
+	elif [[ -n $recon_full ]]; then # разведка всеми методами активно пасивно осинт атаки
 		Subdomain_enum_passive
 		Subdomain_enum
 		subdomain_permytation
@@ -2482,17 +2520,34 @@ MULTILINE-COMMENT
 		subdomain_permytation
 		subdomain_bruteforce
 		SubRresult
+		webs
 		zonetransfer_takeovers
 		checkWAF
 		s3bucket
 		clearempity
-
+	elif [[ -n $recon_speed ]]; then # Быстрое сканирование только самые быстрые методы
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		zonetransfer_takeovers
+		s3bucket
+		scan_hosts_passive
+		visual_indentification
+		checkWAF
+		ips
+		ip2provider
+		webtehnologies
+		domain_info
+		clearempity
 	fi
+	
 	if [[ -n $check_all_tools || -n $install_tools ]]; then
 		echo ""
 	else
-		#archive_scan
-		#archive_md_lists
+		archive_scan
+		archive_md_lists
 		github_get_private_scan
 	fi
 }
