@@ -22,6 +22,7 @@ function help(){
 	echo "  -p, --passive 			только пассивные методы, не влияющие на цель "
 	echo "  -a, --active				полный интеллект с использованием атак "
 	echo "  -o, --osint				минимальная разведка с использованием OSINT "
+	echo "  -nosub, --no-subdomain		не собирать поддомены, только разведка основного домена "
 	echo ""
 	echo "  -in, --install			Установить все инструменты "
 	echo "  -ct, --check-tools			Убедитесь, что инструменты установлены правильно "
@@ -127,6 +128,11 @@ case $key in
     ;;
     -r|--recon-full) # полная разведка без атак
     recon_full="$1"
+    shift # past argument
+    shift # past value
+    ;;
+	-nosub|--no-subdomain) # не начинаем искать субдомены
+    no_subdomain="$1"
     shift # past argument
     shift # past value
     ;;
@@ -267,6 +273,7 @@ function check_tools(){
 	[ -f "$tools/brutespray/brutespray.py" ] || { printf "${bred} [*] brutespray		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/DHVAdmin/dhv.sh" ] || { printf "${bred} [*] dhv.sh		[NO]${reset}\n"; allinstalled=false;}
 	[ -f "$tools/GoogleDorker/dorker/dorker.py" ] || { printf "${bred} [*] GoogleDorker		[NO]${reset}\n"; allinstalled=false;}
+	[ -f "$tools/jsmon/jsmon.py" ] || { printf "${bred} [*] jsmon		[NO]${reset}\n"; allinstalled=false;}
 	type -P dirdar &>/dev/null || { printf "${bred} [*] dirdar		[NO]${reset}\n"; allinstalled=false;}
 	type -P github-endpoints &>/dev/null || { printf "${bred} [*] github-endpoints	[NO]${reset}\n"; allinstalled=false;}
 	type -P github-subdomains &>/dev/null || { printf "${bred} [*] github-subdomains	[NO]${reset}\n"; allinstalled=false;}
@@ -633,6 +640,38 @@ for pip_tool in "${!pip_tools[@]}"; do
     fi
 done
 
+# установка сложных инструментов
+# установка jsmon
+printf "${bblue}\n установка jsmon. ${reset}\n\n"
+
+git clone https://github.com/robre/jsmon.git "$tools/jsmon" || { echo "Failed to clone repository."; exit 1; }
+eval python3 $tools/jsmon/setup.py install
+
+touch $tools/jsmon/.env
+
+cat <<EOL > "$tools/jsmon/.env"
+JSMON_NOTIFY_TELEGRAM=$JSMON_NOTIFY_TELEGRAM
+JSMON_TELEGRAM_TOKEN="$JSMON_TELEGRAM_TOKEN"
+JSMON_TELEGRAM_CHAT_ID="$JSMON_TELEGRAM_CHAT_ID"
+#JSMON_NOTIFY_SLACK=$JSMON_NOTIFY_SLACK
+#JSMON_SLACK_TOKEN="$JSMON_SLACK_TOKEN"
+#JSMON_SLACK_CHANNEL_ID="$JSMON_SLACK_CHANNEL_ID"
+EOL
+
+# Добовляем задачу в крон
+if [[ $JSMON_CRON == "true" ]]; then
+
+	CRON_JOB_COMMAND="$JSMON_CRON_TIME $tools/jsmon/jsmon.sh"
+
+	if ! crontab -l | grep -q "$CRON_JOB_COMMAND"; then
+		(crontab -l 2>/dev/null; echo "$JSMON_CRON_TIME $tools/jsmon/jsmon.sh") | crontab -
+		echo "Cron job added successfully!"
+	else
+		echo "Cron job already exists!"
+	fi
+fi
+
+
 # устанавливаем рекурсивно все зависимости из requirements.txt в папке утилиты во всех каталогов (навсякий случай)
 printf "\n\n${bgreen}#######################################################################${reset}\n"
 printf "${bgreen} reconWTF Устанавливаем рекурсивно все зависимсоти из каталога ${tools} ${reset}\n\n"
@@ -767,6 +806,9 @@ eval strip -s $HOME/go/bin/* $DEBUG_STD
 
 eval $SUDO cp $HOME/go/bin/* /usr/bin/ $DEBUG_STD
 
+
+
+
 printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/config.yaml)\n - GitHub (~/Tools/.github_tokens)\n - SHODAN (SHODAN_API_KEY in reconWTF.cfg)\n - SSRF Server (COLLAB_SERVER in reconWTF.cfg) \n - Blind XSS Server (XSS_SERVER in reconWTF.cfg) \n - notify (~/.config/notify/notify.conf) \n - theHarvester (~/Tools/theHarvester/api-keys.yml)\n - H8mail (~/Tools/h8mail_config.ini)\n sigurlfind3r (~/.config/sigurlfind3r/conf.yaml) \n\n ${reset}"
 printf "${bgreen} Finished!${reset}\n\n"
 printf "${bgreen} Check installed utilities${reset}\n\n"
@@ -811,155 +853,9 @@ function tools_update_resurce(){
 		eval nuclei -update-templates
 	fi
 	# устанавливаем или обновляем шаблоны написанные сообществом
-	if [[ $COMUNITY_ADDITIONAL_NUCLEI_TEMPLATES == "true" && -n $install_tools ]]; then
-		printf "\n\n${bgreen}#######################################################################${reset}\n"
-		printf "${bblue} Обновление шаблонов от сообщества nuclei ${reset}\n\n"
-		mkdir -p ~/nuclei-templates/
-		eval target_directory="~/nuclei-comunitu-template/"
-		# Список URL-ов репозиториев
-		# взято от сюда https://github.com/xm1k3/cent
-		repositories=(
-			"https://github.com/0x727/ObserverWard"
-			"https://github.com/0xAwali/Virtual-Host"
-			"https://github.com/0xPugazh/my-nuclei-templates"
-			"https://github.com/0xmaximus/final_freaking_nuclei_templates"
-			"https://github.com/1in9e/my-nuclei-templates"
-			"https://github.com/wr00t/templates"
-			"https://github.com/ARPSyndicate/kenzer-templates"
-			"https://github.com/Akokonunes/Private-Nuclei-Templates"
-			"https://github.com/Arvinthksrct/alltemplate"
-			"https://github.com/AshiqurEmon/nuclei_templates"
-			"https://github.com/CharanRayudu/Custom-Nuclei-Templates"
-			"https://github.com/DoubleTakes/nuclei-templates"
-			"https://github.com/Elsfa7-110/mynuclei-templates"
-			"https://github.com/ExpLangcn/NucleiTP"
-			"https://github.com/Harish4948/Nuclei-Templates"
-			"https://github.com/Hunt2behunter/nuclei-templates"
-			"https://github.com/Jagomeiister/nuclei-templates"
-			"https://github.com/JoshMorrison99/url-based-nuclei-templates"
-			"https://github.com/Kaue-Navarro/Templates-kaue-nuclei"
-			"https://github.com/KeepHowling/all_freaking_nuclei_templates"
-			"https://github.com/Lopseg/nuclei-c-templates"
-			"https://github.com/MR-pentestGuy/nuclei-templates"
-			"https://github.com/NightRang3r/misc_nuclei_templates"
-			"https://github.com/NitinYadav00/My-Nuclei-Templates"
-			"https://github.com/Odayex/Random-Nuclei-Templates"
-			"https://github.com/PedroF-369/nuclei_templates"
-			"https://github.com/R-s0n/Custom_Vuln_Scan_Templates"
-			"https://github.com/Saimonkabir/Nuclei-Templates"
-			"https://github.com/Saptak9983/Nuclei-Template"
-			"https://github.com/ShangRui-hash/my-nuclei-templates"
-			"https://github.com/freakyclown/Nuclei_templates"
-			"https://github.com/SirAppSec/nuclei-template-generator-log4j"
-			"https://github.com/Str1am/my-nuclei-templates"
-			"https://github.com/SumedhDawadi/Custom-Nuclei-Template"
-			"https://github.com/System00-Security/backflow"
-			"https://github.com/adampielak/nuclei-templates"
-			"https://github.com/aels/CVE-2022-37042"
-			"https://github.com/alexrydzak/rydzak-nuclei-templates"
-			"https://github.com/ayadim/Nuclei-bug-hunter"
-			"https://github.com/badboy-sft/badboy_17-Nuclei-Templates-Collection"
-			"https://github.com/binod235/nuclei-templates-and-reports"
-			"https://github.com/blazeinfosec/nuclei-templates"
-			"https://github.com/brinhosa/brinhosa-nuclei-templates"
-			"https://github.com/c-sh0/nuclei_templates"
-			"https://github.com/cipher387/juicyinfo-nuclei-templates"
-			"https://github.com/clarkvoss/Nuclei-Templates"
-			"https://github.com/coldrainh/nuclei-ByMyself"
-			"https://github.com/d3sca/Nuclei_Templates"
-			"https://github.com/daffainfo/my-nuclei-templates"
-			"https://github.com/damon-sec/Nuclei-templates-Collection"
-			"https://github.com/dk4trin/templates-nuclei"
-			"https://github.com/drfabiocastro/certwatcher-templates"
-			"https://github.com/ekinsb/Nuclei-Templates"
-			"https://github.com/erickfernandox/nuclei-templates"
-			"https://github.com/esetal/nuclei-bb-templates"
-			"https://github.com/ethicalhackingplayground/erebus-templates"
-			"https://github.com/geeknik/nuclei-templates-1"
-			"https://github.com/geeknik/the-nuclei-templates"
-			"https://github.com/glyptho/templatesallnuclei"
-			"https://github.com/im403/nuclei-temp"
-			"https://github.com/javaongsan/nuclei-templates"
-			"https://github.com/justmumu/SpringShell"
-			"https://github.com/kabilan1290/templates"
-			"https://github.com/kh4sh3i/CVE-2022-23131"
-			"https://github.com/luck-ying/Library-YAML-POC"
-			"https://github.com/mastersir-lab/nuclei-yaml-poc"
-			"https://github.com/mbskter/Masscan2Httpx2Nuclei-Xray"
-			"https://github.com/medbsq/ncl"
-			"https://github.com/meme-lord/Custom-Nuclei-Templates"
-			"https://github.com/n1f2c3/mytemplates"
-			"https://github.com/notnotnotveg/nuclei-custom-templates"
-			"https://github.com/obreinx/nuceli-templates"
-			"https://github.com/optiv/mobile-nuclei-templates"
-			"https://github.com/panch0r3d/nuclei-templates"
-			"https://github.com/peanuth8r/Nuclei_Templates"
-			"https://github.com/pentest-dev/Profesional-Nuclei-Templates"
-			"https://github.com/pikpikcu/nuclei-templates"
-			"https://github.com/ping-0day/templates"
-			"https://github.com/praetorian-inc/chariot-launch-nuclei-templates"
-			"https://github.com/ptyspawnbinbash/template-enhancer"
-			"https://github.com/rafaelcaria/Nuclei-Templates"
-			"https://github.com/rafaelwdornelas/my-nuclei-templates"
-			"https://github.com/rahulkadavil/nuclei-templates"
-			"https://github.com/randomstr1ng/nuclei-sap-templates"
-			"https://github.com/redteambrasil/nuclei-templates"
-			"https://github.com/ree4pwn/my-nuclei-templates"
-			"https://github.com/ricardomaia/nuclei-template-generator-for-wordpress-plugins"
-			"https://github.com/sadnansakin/my-nuclei-templates"
-			"https://github.com/securitytest3r/nuclei_templates_work"
-			"https://github.com/sharathkramadas/k8s-nuclei-templates"
-			"https://github.com/shifa123/detections"
-			"https://github.com/sl4x0/NC-Templates"
-			"https://github.com/smaranchand/nuclei-templates"
-			"https://github.com/soapffz/myown-nuclei-poc"
-			"https://github.com/soumya123raj/Nuclei"
-			"https://github.com/souzomain/mytemplates"
-			"https://github.com/tamimhasan404/Open-Source-Nuclei-Templates-Downloader"
-			"https://github.com/test502git/log4j-fuzz-head-poc"
-			"https://github.com/th3r4id/nuclei-templates"
-			"https://github.com/thebrnwal/Content-Injection-Nuclei-Script"
-			"https://github.com/thecyberneh/nuclei-templatess"
-			"https://github.com/thelabda/nuclei-templates"
-			"https://github.com/boobooHQ/private_templates"
-			"https://github.com/rix4uni/BugBountyTips"
-			"https://github.com/Lu3ky13/Authorization-Nuclei-Templates"
-			"https://github.com/bug-vs-me/nuclei"
-			"https://github.com/topscoder/nuclei-wordfence-cve"
-			"https://github.com/toramanemre/apache-solr-log4j-CVE-2021-44228"
-			"https://github.com/toramanemre/log4j-rce-detect-waf-bypass"
-			"https://github.com/trickest/log4j"
-			"https://github.com/wasp76b/nuclei-templates"
-			"https://github.com/wr00t/templates"
-			"https://github.com/xinZa1/template"
-			"https://github.com/yarovit-developer/nuclei-templates"
-			"https://github.com/yavolo/nuclei-templates"
-			"https://github.com/z3bd/nuclei-templates"
-			"https://github.com/zer0yu/Open-PoC"
-			"https://github.com/bhataasim1/PersonalTemplates"
-			"https://github.com/pikpikcu/my-nuclei-templates"
-			"https://github.com/SirBugs/Priv8-Nuclei-Templates"
-		)
-		
-		# Перебираем каждый URL и клонируем репозиторий в целевую директорию
-		for repo_url in "${repositories[@]}"; do
-			# Извлекаем имя репозитория из URL-а
-			repo_name=$(basename "$repo_url")
-			
-			# Формируем полный путь к целевой директории
-			destination="$target_directory/$repo_name"
-			
-			# Клонируем репозиторий
-			git clone "$repo_url" "$destination"
-			
-			# Проверяем статус выполнения команды git clone
-			if [ $? -eq 0 ]; then
-				printf "Репозиторий %s успешно склонирован в %s\n" "$repo_name" "$destination"
-			else
-				printf "Ошибка при клонировании репозитория %s\n" "$repo_name"
-			fi
-		done
-	fi
+	
+	
+
 	# загружаем файл с технологиями для инструмента webanalyze
 	wget --no-clobber -P $tools "https://raw.githubusercontent.com/rverton/webanalyze/master/technologies.json" &>>"$DEBUG_FILE"
 }
@@ -1041,12 +937,15 @@ function SubRresult(){
 
 function Subdomain_enum_passive(){
 	if [[ $SUB_ENUM_GENERAL == "true" ]]; then
+		if [[ -z "$no_subdomain" ]]; then
 			# запускаем certfinder без dig он не работает
 			if [[ $SUB_ENUM_CERT == "true" ]]; then
 				echo "запускается cert"
 				python3 $tools/ctfr/ctfr.py -d $target_domain | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | anew $recon_dir/$target_domain/.tmp/cert_subdomains.txt &>>"$DEBUG_FILE"
 			fi
-
+		else
+			echo "$target_domain" > $recon_dir/$target_domain/.tmp/onedomain_subdomains.txt
+		fi
 
 	fi
 
@@ -1055,57 +954,60 @@ function Subdomain_enum_passive(){
 function Subdomain_enum(){
 
 	if [[ $SUB_ENUM_GENERAL == "true" ]]; then
-
-		if [[ $SUB_ENUM_SYBFINDER == "true" ]]; then
-				echo "## запускаем subfinder ##" $debug
-				subfinder -d $target_domain -config $SUBFINDER_CONFIG -nc -silent -recursive -nW | anew $recon_dir/$target_domain/.tmp/subfinder_subdomains.txt  &>>"$DEBUG_FILE"
-			else
-				echo " subfinder false "
-		fi
-
-		if [[ $SUB_ENUM_AMASS == "true" ]]; then
-
-			if [[ -n $company && -n $cidr ]]; then
-				echo "выполняю -n company && -n cidr "
-				amass intel -org $company >  $recon_dir/$target_domain/hosts/asn.txt
-				cat $recon_dir/$target_domain/hosts/asn.txt | grep "ASN:" | grep "[0-9]" | awk '{print $2}' | tr '\n' ',' | sed s/,$// > $recon_dir/$target_domain/.tmp/asn_list.txt
-				asn_list=$(cat $recon_dir/$target_domain/.tmp/asn_list.txt)
-
-				amass enum -d $target_domain -cidr $cidr -asn $asn_list -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_and_asn_subdomains.txt
-
-			else
-				echo "amass no cidr and no company"
+		if [[ -z "$no_subdomain" ]]; then
+			if [[ $SUB_ENUM_SYBFINDER == "true" ]]; then
+					echo "## запускаем subfinder ##" $debug
+					subfinder -d $target_domain -config $SUBFINDER_CONFIG -nc -silent -recursive -nW | anew $recon_dir/$target_domain/.tmp/subfinder_subdomains.txt  &>>"$DEBUG_FILE"
+				else
+					echo " subfinder false "
 			fi
 
-			if [[ -n $cidr && -z $company ]]; then # запускаем amss c cidr если cidr есть а компании нет
-				echo "выаолняю -z company && -n cidr "
-				amass enum -d $target_domain -cidr $cidr -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_subdomains.txt
+			if [[ $SUB_ENUM_AMASS == "true" ]]; then
+
+				if [[ -n $company && -n $cidr ]]; then
+					echo "выполняю -n company && -n cidr "
+					amass intel -org $company >  $recon_dir/$target_domain/hosts/asn.txt
+					cat $recon_dir/$target_domain/hosts/asn.txt | grep "ASN:" | grep "[0-9]" | awk '{print $2}' | tr '\n' ',' | sed s/,$// > $recon_dir/$target_domain/.tmp/asn_list.txt
+					asn_list=$(cat $recon_dir/$target_domain/.tmp/asn_list.txt)
+
+					amass enum -d $target_domain -cidr $cidr -asn $asn_list -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_and_asn_subdomains.txt
+
+				else
+					echo "amass no cidr and no company"
+				fi
+
+				if [[ -n $cidr && -z $company ]]; then # запускаем amss c cidr если cidr есть а компании нет
+					echo "выаолняю -z company && -n cidr "
+					amass enum -d $target_domain -cidr $cidr -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_subdomains.txt
+				else
+					echo " amass cidr false "
+				fi
+
+				if [[ -n $company && -z $cidr ]]; then
+					echo "выполняю -n company && -z cidr "
+					amass intel -org $company >  $recon_dir/$target_domain/hosts/asn.txt
+					cat $recon_dir/$target_domain/hosts/asn.txt | grep "ASN:" | grep "[0-9]" | awk '{print $2}' | tr '\n' ',' | sed s/,$// > $recon_dir/$target_domain/.tmp/asn_list.txt
+					asn_list=$(cat $recon_dir/$target_domain/.tmp/asn_list.txt)
+
+					amass enum -d $target_domain -asn $asn_list -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_and_asn_subdomains.txt
+
+				else
+					echo "amass enum asn false no company name"
+				fi
+
+				if [[ -n $target_domain && -z $company && -z $cidr ]]; then
+					echo "start -n target_domain && -z company && -z cidr "
+					amass enum -d $target_domain -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_subdomains.txt
+				else
+					echo "amass no target name"
+				fi
+
+
 			else
-				echo " amass cidr false "
+				echo "amss geral false"
 			fi
-
-			if [[ -n $company && -z $cidr ]]; then
-				echo "выполняю -n company && -z cidr "
-				amass intel -org $company >  $recon_dir/$target_domain/hosts/asn.txt
-				cat $recon_dir/$target_domain/hosts/asn.txt | grep "ASN:" | grep "[0-9]" | awk '{print $2}' | tr '\n' ',' | sed s/,$// > $recon_dir/$target_domain/.tmp/asn_list.txt
-				asn_list=$(cat $recon_dir/$target_domain/.tmp/asn_list.txt)
-
-				amass enum -d $target_domain -asn $asn_list -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_cidr_and_asn_subdomains.txt
-
-			else
-				echo "amass enum asn false no company name"
-			fi
-
-			if [[ -n $target_domain && -z $company && -z $cidr ]]; then
-				echo "start -n target_domain && -z company && -z cidr "
-				amass enum -d $target_domain -nocolor -rf $dns_resolver -active | anew $recon_dir/$target_domain/.tmp/amass_subdomains.txt
-			else
-				echo "amass no target name"
-			fi
-
-
 		else
-			echo "amss geral false"
+			echo "$target_domain" > $recon_dir/$target_domain/.tmp/onedomain_subdomains.txt
 		fi
 	else
 		echo " subdomain enumeration false "
@@ -1116,21 +1018,25 @@ function Subdomain_enum(){
 
 function subdomain_permytation(){
 	if [[ $SUB_ENUM_PERMUTATION == "true" ]]; then
-		echo "DNScewl"
-		$tools/DNSCewl/DNScewl -t $target_domain -p $permutations_list | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | anew $recon_dir/$target_domain/.tmp/dnscewl_subdomains.txt  &>>"$DEBUG_FILE"
-		echo "====== dnsgen -l 3 -  ========="
-		# сначала разрешаем поддомены для передачи в dnsgen
-		touch $recon_dir/$target_domain/.tmp/all_permutation.txt
-		cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | anew $recon_dir/$target_domain/.tmp/all_permutation.txt &>>"$DEBUG_FILE"
-		cat $recon_dir/$target_domain/.tmp/all_permutation.txt | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/.tmp/puredns_subdomain.txt &>>"$DEBUG_FILE"
-		# на основе доменов генерируем имена поддомено
-		dnsgen -l $SUB_ENUM_PERMUTATION_WORDLEN $recon_dir/$target_domain/.tmp/puredns_subdomain.txt | anew $recon_dir/$target_domain/.tmp/dnsgen_subdomains.txt &>>"$DEBUG_FILE"
-		# разрешаем все что сгенерировали
-		cat $recon_dir/$target_domain/.tmp/dnsgen_subdomains.txt | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/.tmp/puredns_resolv_subdomains.txt 2>>"$DEBUG_FILE"
-		# помещаем весь результат в файл
-		cat $recon_dir/$target_domain/.tmp/puredns_resolv_subdomains.txt | anew $recon_dir/$target_domain/.tmp/permytation_subdomains.txt &>>"$DEBUG_FILE"
-		rm $recon_dir/$target_domain/.tmp/puredns_resolv_subdomains.txt
-		rm $recon_dir/$target_domain/.tmp/all_permutation.txt
+		if [[ -z "$no_subdomain" ]]; then
+			echo "DNScewl"
+			$tools/DNSCewl/DNScewl -t $target_domain -p $permutations_list | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | anew $recon_dir/$target_domain/.tmp/dnscewl_subdomains.txt  &>>"$DEBUG_FILE"
+			echo "====== dnsgen -l 3 -  ========="
+			# сначала разрешаем поддомены для передачи в dnsgen
+			touch $recon_dir/$target_domain/.tmp/all_permutation.txt
+			cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | anew $recon_dir/$target_domain/.tmp/all_permutation.txt &>>"$DEBUG_FILE"
+			cat $recon_dir/$target_domain/.tmp/all_permutation.txt | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/.tmp/puredns_subdomain.txt &>>"$DEBUG_FILE"
+			# на основе доменов генерируем имена поддомено
+			dnsgen -l $SUB_ENUM_PERMUTATION_WORDLEN $recon_dir/$target_domain/.tmp/puredns_subdomain.txt | anew $recon_dir/$target_domain/.tmp/dnsgen_subdomains.txt &>>"$DEBUG_FILE"
+			# разрешаем все что сгенерировали
+			cat $recon_dir/$target_domain/.tmp/dnsgen_subdomains.txt | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/.tmp/puredns_resolv_subdomains.txt 2>>"$DEBUG_FILE"
+			# помещаем весь результат в файл
+			cat $recon_dir/$target_domain/.tmp/puredns_resolv_subdomains.txt | anew $recon_dir/$target_domain/.tmp/permytation_subdomains.txt &>>"$DEBUG_FILE"
+			rm $recon_dir/$target_domain/.tmp/puredns_resolv_subdomains.txt
+			rm $recon_dir/$target_domain/.tmp/all_permutation.txt
+		else
+			echo "$target_domain" > $recon_dir/$target_domain/.tmp/onedomain_subdomains.txt
+		fi
 	else
 		echo " subdomain permutation false"
 	fi
@@ -1139,12 +1045,15 @@ function subdomain_permytation(){
 
 function subdomain_bruteforce(){
 	if [[ $SUB_ENUM_BRUTEFORCE == "true" ]]; then
-		
-		# здесь брутим поддомены
-		if [[ $SUB_ENUM_BRUTEFORCE_MINFILE  == "true" ]]; then
-			cat $brute_list_min | puredns bruteforce $target_domain --resolvers $dns_resolver | anew $recon_dir/$target_domain/.tmp/min_brute_subdomains.txt
-		elif [[ $SUB_ENUM_BRUTEFORCE_MAXFILE == "true" ]]; then
-			cat $brute_list_big | puredns bruteforce $target_domain --resolvers $dns_resolver | anew $recon_dir/$target_domain/.tmp/big_brute_subdomains.txt
+		if [[ -z "$no_subdomain" ]]; then
+			# здесь брутим поддомены
+			if [[ $SUB_ENUM_BRUTEFORCE_MINFILE  == "true" ]]; then
+				cat $brute_list_min | puredns bruteforce $target_domain --resolvers $dns_resolver | anew $recon_dir/$target_domain/.tmp/min_brute_subdomains.txt
+			elif [[ $SUB_ENUM_BRUTEFORCE_MAXFILE == "true" ]]; then
+				cat $brute_list_big | puredns bruteforce $target_domain --resolvers $dns_resolver | anew $recon_dir/$target_domain/.tmp/big_brute_subdomains.txt
+			fi
+		else
+			echo "$target_domain" > $recon_dir/$target_domain/.tmp/onedomain_subdomains.txt
 		fi
 	else
 		echo " subdomain bruteforce false "
@@ -1306,11 +1215,28 @@ function scope_endpoint(){
 }
 
 function endpoint_enum_passive(){
-	if [[ $SIGURLFIND3R == "true" ]]; then
-		interlace -tL $recon_dir/$target_domain/webs/webs.txt -threads $IN_SIGURLFIND3R -c "sigurlfind3r -d "_target_" -iS | anew $recon_dir/$target_domain/.tmp/sigurlfind3r_endpoint.txt"
-		scope_endpoint # функция обедеинения файлов и применение scope
-	else
-		printf "sigurlfind3r == false"
+		
+	if [[ $ENDP_ENUM_GAUPLUS == "true" ]]; then
+			cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | gauplus -random-agent > $recon_dir/$target_domain/.tmp/gauplus_endpoint.txt
+	fi
+	if [[ $ENDP_ENUM_GITHUB == "true" && $GITHUB_DORKS != "XXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
+		python3 $tools/github-search/github-endpoints.py -t $GITHUB_TOKEN -d $target_domain > $recon_dir/$target_domain/.tmp/github_endpoint.txt
+	fi
+	if [[ $ENDP_ENUM_PARAMSPIDER == "true" ]]; then
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads $IN_PARAMSPIDER -c "python3 $tools/ParamSpider/paramspider.py --level high -d _target_ | egrep -io 'http.*?' >> $recon_dir/$target_domain/.tmp/paramspider_endpoint.txt" -v
+		mv $recon_dir/$target_domain/output/ $recon_dir/$target_domain/webs/output_paramspider
+	fi
+	printf "sigurlfind3r == false"
+	# функция обедеинения файлов и применение scope
+	scope_endpoint
+	# генерация списков слов на основе конечных точек
+	if [[ $ENDP_GENERATION_LIST == "true" ]]; then
+		cat $recon_dir/$target_domain/webs/url_extract.txt | unfurl -u keys | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q $recon_dir/$target_domain/webs/dict_words.txt
+		cat $recon_dir/$target_domain/webs/url_extract.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q $recon_dir/$target_domain/webs/dict_words.txt
+		cat $recon_dir/$target_domain/webs/url_extract.txt | tr "[:punct:]" "\n" | anew -q $recon_dir/$target_domain/webs/dict_words.txt
+	fi
+	if [[ $ENDP_ALLOW_HTTPX == "true" ]]; then
+		cat $recon_dir/$target_domain/webs/url_extract.txt | httpx -random-agent -t 100 -nc -fr -maxr 2 -fhr -maxhr 10 --silent -sc -cl -ct -title -server -td -method -websocket -cname -cdn -probe | anew $recon_dir/$target_domain/webs/allow_url_extract.txt
 	fi
 }
 
@@ -1351,6 +1277,44 @@ function endpoint_enum_agressive(){
 		fi
 	else
 		echo " enpoint enum false "
+	fi
+}
+
+function jsmon_checks(){
+
+	if [[ $JSMON_SCAN == "true" ]]; then
+
+		touch $tools/jsmon/.env
+		echo "" > $tools/jsmon/.env
+
+cat <<EOL > "$tools/jsmon/.env"
+JSMON_NOTIFY_TELEGRAM=$JSMON_NOTIFY_TELEGRAM
+JSMON_TELEGRAM_TOKEN="$JSMON_TELEGRAM_TOKEN"
+JSMON_TELEGRAM_CHAT_ID="$JSMON_TELEGRAM_CHAT_ID"
+#JSMON_NOTIFY_SLACK=$JSMON_NOTIFY_SLACK
+#JSMON_SLACK_TOKEN="$JSMON_SLACK_TOKEN"
+#JSMON_SLACK_CHANNEL_ID="$JSMON_SLACK_CHANNEL_ID"
+EOL
+
+		# Добовляем задачу в крон
+		if [[ $JSMON_CRON == "true" ]]; then
+
+			CRON_JOB_COMMAND="$JSMON_CRON_TIME $tools/jsmon/jsmon.sh"
+
+			if ! crontab -l | grep -q "$CRON_JOB_COMMAND"; then
+				(crontab -l 2>/dev/null; echo "$JSMON_CRON_TIME $tools/jsmon/jsmon.sh") | crontab -
+				echo "Cron job added successfully!"
+			else
+				echo "Cron job already exists!"
+			fi
+		fi
+
+		cat $recon_dir/$target_domain/webs/url_extract.txt | grep -i ".js$" > $recon_dir/$target_domain/.tmp/jsmon_endpoint_js.txt
+		cat $recon_dir/$target_domain/.tmp/jsmon_endpoint_js.txt | grep -i ".js$" | httpx -silent -random-agent -follow-redirects -no-color -status-code -H "$header_cookie" | grep "\[200\]$" | eval $see > $recon_dir/$target_domain/.tmp/jsmon_endpoint_js_live.txt
+		cat $recon_dir/$target_domain/.tmp/jsmon_endpoint_js_live.txt | anew $tools/jsmon/targets/$target_domain
+	
+	else
+		echo " JSMON_SCAN false "
 	fi
 }
 
@@ -2539,6 +2503,10 @@ function init(){ # инициализация разведки на основе
 		ips
 		ip2provider
 		webtehnologies
+		endpoint_enum_passive
+		jsmon_checks
+		url_gf
+		url_ext_file
 		domain_info
 		clearempity
 	fi
