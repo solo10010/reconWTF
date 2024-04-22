@@ -14,11 +14,12 @@ function help(){
 	echo "  -g, --config		<config.conf>	конфигурационный файл '-g dir/config2.conf' "
 	echo "  -c, --cookie 		<cookie>  	куки -c 'PHPSESSIONID=qweqweqwe'"
 	echo "  -cidr, --cidr		<ip range>	целевой диапазон IP-адресов 192.49,128.0/16"
-	echo "  -n, --name            <trget_name>    целевое имя, например vdp-inmpbi"
+	echo "  -n, --name            <trget_name>    целевое имя, например vdp-inmpbi выбирайте имя программы на h1"
 	echo ""
 	echo "  -r, --recon-full	 		полная разведка цели (с применением атак) "
 	echo "  -rs, --recon-speed	 		Быстрая разведка (только быстрые методы) "
 	echo "  -s, --subdimain-search	 	только поиск субдоменов, разрешение и захват субдоменов "
+	echo "  -sn, --scan-now	 	активное сканирование только новых субдоменов"
 	echo "  -p, --passive 			только пассивные методы, не влияющие на цель "
 	echo "  -a, --active				полный интеллект с использованием атак "
 	echo "  -o, --osint				минимальная разведка с использованием OSINT "
@@ -146,6 +147,11 @@ case $key in
     shift # past argument
     shift # past value
     ;;
+	-sn|--scan-now) # активное сканирование только новых субдоменов (у вас должно быть предварительное хоть одно сканирвоание)
+    scan_now="$1"
+    shift # past argument
+    shift # past value
+    ;;
     -p|--passive) # только пассивные методы не затрагивающие цель
     passive="$1"
     shift # past argument
@@ -226,20 +232,6 @@ done
 #		exit
 #fi
 
-# определяем глобальные переменные
-echo "Version: $reconWTF_version"
-if [[ -n $cookie ]]; then # если были переданы куки то записываем куки с хедером
-	header_cookie=$(echo "Cooke: $cookie") # записываем куку в переменнуж с Cookie:
-fi 
-
-# переопределяем переменную recon_dir папки рекона если передано имя программы
-if [[ $name ]]; then
-	    recon_dir="$recon_dir/$name"
-	    mkdir -p $recon_dir
-fi
-
-see="sed -r 's/\[.+]//' | sed 's/ //g' | sed '/^$/d'" # убрать и STDIN [] \n \f []
-DEBUG_FILE=$recon_dir/$target_domain/.tmp/debug #файл для дебага
 
 # проверяем установлены ли инструменты
 function check_tools(){
@@ -322,7 +314,7 @@ function check_tools(){
 	type -P dig &>/dev/null || { printf "${bred} [*] dig	[NO]${reset}\n"; allinstalled=false;}
 	type -P lynx &>/dev/null || { printf "${bred} [*] lynx	[NO]${reset}\n"; allinstalled=false;}
 	type -P host &>/dev/null || { printf "${bred} [*] host	[NO]${reset}\n"; allinstalled=false;}
-	type -P chromium &>/dev/null || { printf "${bred} [*] chromium	[NO]${reset}\n"; allinstalled=false;}
+	type -P chromium-browser &>/dev/null || { printf "${bred} [*] chromium	[NO]${reset}\n"; allinstalled=false;}
 	type -P wget &>/dev/null || { printf "${bred} [*] wget	[NO]${reset}\n"; allinstalled=false;}
 	type -P curl &>/dev/null || { printf "${bred} [*] curl	[NO]${reset}\n"; allinstalled=false;}
 	type -P python3 &>/dev/null || { printf "${bred} [*] python3	[NO]${reset}\n"; allinstalled=false;}
@@ -336,6 +328,7 @@ function check_tools(){
 	type -P whatweb &>/dev/null || { printf "${bred} [*] whatweb  [NO]${reset}\n"; allinstalled=false;}
 	type -P arjun &>/dev/null || { printf "${bred} [*] arjun  [NO]${reset}\n"; allinstalled=false;}
 	type -P smap &>/dev/null || { printf "${bred} [*] smap  [NO]${reset}\n"; allinstalled=false;}
+	type -P hackerone &>/dev/null || { printf "${bred} [*] hackerone  [NO]${reset}\n"; allinstalled=false;}
 	
 	
 
@@ -435,6 +428,7 @@ function install_tools(){
 	repos["ParamSpider"]="0xKayala/ParamSpider"
 	repos["solo-nuclei-templates"]="solo10010/solo-nuclei-templates"
 	repos["GoogleDorker"]="sanjai-AK47/GoogleDorker"
+	repos["hackerone-cli"]="nu11pointer/hackerone-cli"
 
 	declare -A pip_tools
 	pip_tools["dnsgen"]="dnsgen"
@@ -671,6 +665,16 @@ if [[ $JSMON_CRON == "true" ]]; then
 	fi
 fi
 
+# устанавливаем hackerone-cli
+
+chmod +x $tools/hackerone-cli/install.sh
+chmod +x $tools/hackerone-cli/hackerone.py
+bash $tools/hackerone-cli/install.sh
+
+# импортируем переменные из конфига
+
+export HACKERONE_USERNAME="$HACKERONE_USERNAME"
+export HACKERONE_API_KEY="$HACKERONE_API_KEY"
 
 # устанавливаем рекурсивно все зависимости из requirements.txt в папке утилиты во всех каталогов (навсякий случай)
 printf "\n\n${bgreen}#######################################################################${reset}\n"
@@ -832,8 +836,36 @@ MULTILINE-COMMENT
 
 }
 
+# определяем глобальные переменные
+echo "Version: $reconWTF_version"
+if [[ -n $cookie ]]; then # если были переданы куки то записываем куки с хедером
+	header_cookie=$(echo "Cooke: $cookie") # записываем куку в переменнуж с Cookie:
+fi 
+
+# переопределяем переменную recon_dir папки рекона если передано имя программы
+if [[ $name ]]; then
+	    recon_dir="$recon_dir/$name"
+	    mkdir -p $recon_dir
+fi
 
 
+see="sed -r 's/\[.+]//' | sed 's/ //g' | sed '/^$/d'" # убрать и STDIN [] \n \f []
+DEBUG_FILE=$recon_dir/$target_domain/.tmp/debug #файл для дебага
+
+function clearempity() {
+    local count_files=1
+    local count_dirs=1
+    
+    while [[ $count_files -gt 0 || $count_dirs -gt 0 ]]; do
+        # Удаляем пустые файлы
+        find $recon_dir -type f -empty -delete
+        count_files=$(find $recon_dir -type f -empty | wc -l)
+
+        # Удаляем пустые каталоги
+        find $recon_dir -type d -empty -delete
+        count_dirs=$(find $recon_dir -type d -empty | wc -l)
+    done
+}
 
 function preliminary_actions(){ # предварительные действия создаем директорию цели итд..
 
@@ -862,7 +894,7 @@ function tools_update_resurce(){
 
 if [ -n $target_domain ]; then
 	# создаем нужные директории если их нет. если есть не создаем
-	if ! [ -d $recon_dir/$target_domain/ ]; then
+	#if ! [ -d $recon_dir/$target_domain/ ]; then
 		mkdir -p $recon_dir
 		mkdir -p $recon_dir/$target_domain/
 		mkdir -p $recon_dir/$target_domain/.tmp
@@ -883,9 +915,9 @@ if [ -n $target_domain ]; then
 		mkdir -p $recon_dir/$target_domain/directories
 
 		cd $recon_dir/$target_domain # переходим в папку рекона
-	else
-		cd $recon_dir/$target_domain # переходим в папку рекона
-	fi
+	#else
+		#cd $recon_dir/$target_domain # переходим в папку рекона
+	#fi
 
 	if [[ -n $cidr  ]]; then # если передан cidr вычесляем все ip
 		
@@ -903,6 +935,46 @@ if [ -n $target_domain ]; then
 	echo "start recon to ${target_domain}" >| "$recon_dir/$target_domain/tmp/debug"
 fi
 
+# создаем файл скоупа программы если имя программы передано и является именем программы на h1 + фильтруем
+if [[ $name ]]; then
+
+	# сощздаем всегда чистый файл скорупа
+	touch $recon_dir/scope.txt
+	touch $recon_dir/pre_scope.txt
+	echo "" > $recon_dir/scope.txt
+	
+	eval hackerone program $name > $recon_dir/pre_scope.txt
+	
+	# Считываем содержимое файла построчно
+	while IFS= read -r line; do
+		# Проверяем, начинается ли строка с "--------------------"
+		if [[ $line == "--------------------" ]]; then
+			# Считываем следующие 4 строки и сохраняем их в массив
+			block=()
+			for ((i = 0; i < 4; i++)); do
+				# Считываем следующую строку
+				read -r next_line
+
+				# Проверяем, содержит ли следующая строка "State: Out-of-Scope"
+				if [[ $next_line == *"State: In-Scope"* ]]; then
+					# выводим только то что в скоупе
+					echo "${block[@]}" | sed 's/Asset:/In-Scope:/' >> $recon_dir/scope.txt
+				fi
+				
+				if [[ $next_line == *"State: Out-of-Scope"* ]]; then
+					# выводим что не в скоупе
+					echo "${block[@]}" | sed 's/Asset:/Out-of-Scope:/' >> $recon_dir/scope.txt
+				fi
+				block+=("$next_line")
+			done
+
+		fi
+	done < "$recon_dir/pre_scope.txt"
+
+	rm $recon_dir/pre_scope.txt
+
+fi
+
 function scope_domain(){
 	if [[ -n $scope_list ]]; then
 		echo " --= scope list =--"
@@ -915,7 +987,8 @@ function scope_domain(){
 function SubRresult(){
 	echo " разрешаем поддомены "
 	# в последний раз разрешаем поддомены и записываем в конечный файл
-	cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | grep -E ".$target_domain$" | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
+	cat $recon_dir/$target_domain/.tmp/*_subdomains.txt | grep -E "\.$target_domain$" | egrep -o "[a-z0-9_-]+(\.[a-z0-9_-]+)*\.[a-z]{2,5}" | egrep -v "www." | puredns resolve -r $dns_resolver 2>>"$DEBUG_FILE" | anew $recon_dir/$target_domain/.tmp/finishdomain.txt &>>"$DEBUG_FILE"
+	cat $recon_dir/$target_domain/.tmp/finishdomain.txt | grep -E "\.$target_domain$" > $recon_dir/$target_domain/subdomain/subdomains.txt
 	echo "$target_domain" | anew $recon_dir/$target_domain/subdomain/subdomains.txt &>>"$DEBUG_FILE"
 	scope_domain
 
@@ -931,6 +1004,31 @@ function SubRresult(){
 		-H "Tags: $ntfy_tags" \
 		-d "Scan Result Collected quantity: $ntfy_count1 It was before: $ntfy_count2 " \
 		$ntfy
+	fi
+
+}
+
+function preparation_sacn_now_sub(){
+
+	# фильтруем только новые добавленные домены
+	diff_output_new_scan_now_sub=$(python3 $tools/single-tools/diffy.py "$recon_dir/$target_domain/subdomain/subdomains.txt" "$recon_dir/$target_domain/archive/subdomain/subdomains.txt" | grep '^[+-] ' | sed 's/^[+-] //')
+	# переименовываем файл с всеми доменами и создаем файл только с новыми другие функции будут брать только эти домены
+	# Проверяем есть ли данные в архиве
+	if [ -e "$recon_dir/$target_domain/subdomain/subdomains.txt" ] && [ -e "$recon_dir/$target_domain/archive/subdomain/subdomains.txt" ]; then
+		if [ -n "$diff_output_new_scan_now_sub" ]; then
+			# переменная не пуста
+			cp $recon_dir/$target_domain/subdomain/subdomains.txt $recon_dir/$target_domain/subdomain/subdomains_back.txt
+			echo "$diff_output_new_scan_now_sub" > $recon_dir/$target_domain/subdomain/subdomains.txt
+		fi
+	fi
+
+}
+
+function end_sacn_now_sub(){
+	# если оба файла существует меняем все обратно что сделали в функции preparation_sacn_now_sub
+	if [ -e "$recon_dir/$target_domain/subdomain/subdomains.txt" ] && [ -e "$recon_dir/$target_domain/subdomain/subdomains_back.txt" ]; then
+		rm $recon_dir/$target_domain/subdomain/subdomains.txt
+		mv $recon_dir/$target_domain/subdomain/subdomains_back.txt $recon_dir/$target_domain/subdomain/subdomains.txt
 	fi
 
 }
@@ -1065,6 +1163,11 @@ function subdomain_bruteforce(){
 function zonetransfer_takeovers(){
 	if [[ $ZONETRANSFER == "true" ]]; then
 		echo " --= zonetransfer takeovers =--"
+	
+		# обнуляем файл если он есть
+		if [ -f "$recon_dir/$target_domain/subdomain/subtakeover.txt" ]; then
+    		echo "" > "$recon_dir/$target_domain/subdomain/subtakeover.txt"
+		fi
 
 		cat $recon_dir/$target_domain/webs/webs.txt | nuclei -silent -t ~/nuclei-templates/takeovers/ -r $dns_resolver -o $recon_dir/$target_domain/subdomain/subtakeover.txt &>> $DEBUG_FILE
 	
@@ -1088,6 +1191,7 @@ function webs(){
 	if [[ $WEBS_GENERAL == "true" ]]; then
 		echo " subdomain http probing "
 		if [[ $WEBS_SUB_HTTPPROBE == "true" ]]; then
+			mkdir -p $recon_dir/$target_domain/webs
 			#cat $recon_dir/$target_domain/subdomain/subdomains.txt | httpx -silent -random-agent -t 100 -nc -fr -maxr 2 -fhr -maxhr 10 -p 8080,10000,20000,2222,7080,9009,7443,2087,2096,8443,4100,2082,2083,2086,9999,2052,9001,9002,7000,7001,8082,8084,8085,8010,9000,2078,2080,2079,2053,2095,4000,5280,8888,9443,5800,631,8000,8008,8087,84,85,86,88,10125,9003,7071,8383,7547,3434,10443,8089,3004,81,4567,7081,82,444,1935,3000,9998,4433,4431,4443,83,90,8001,8099,80,300,443,591,593,832,981,1010,1311,2480,3128,3333,4243,4711,4712,4993,5000,5104,5108,6543,7396,7474,8014,8042,8069,8081,8088,8090,8091,8118,8123,8172,8222,8243,8280,8281,8333,8500,8834,8880,8983,9043,9060,9080,9090,9091,9200,9800,9981,12443,16080,18091,18092,20720,28017 | eval $see | anew $recon_dir/$target_domain/webs/webs_uncommon_ports.txt
 			cat $recon_dir/$target_domain/subdomain/subdomains.txt | httprobe --prefer-https  | anew $recon_dir/$target_domain/webs/webs.txt
 			
@@ -1123,6 +1227,7 @@ function s3bucket(){
 }
 
 function scan_hosts_passive() {
+	mkdir -p $recon_dir/$target_domain/webs
     while IFS= read -r line_smap; do
         # Выполнение smap и awk для каждой строки
         smap_output=$(smap "$line_smap" | awk '/^[0-9]/ {print $1, $2, $3, $4}')
@@ -1217,7 +1322,7 @@ function scope_endpoint(){
 function endpoint_enum_passive(){
 		
 	if [[ $ENDP_ENUM_GAUPLUS == "true" ]]; then
-			cat $recon_dir/$target_domain/webs/webs_uncommon_ports.txt | gauplus -random-agent > $recon_dir/$target_domain/.tmp/gauplus_endpoint.txt
+			cat $recon_dir/$target_domain/webs/subdomains.txt | gauplus -random-agent > $recon_dir/$target_domain/.tmp/gauplus_endpoint.txt
 	fi
 	if [[ $ENDP_ENUM_GITHUB == "true" && $GITHUB_DORKS != "XXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
 		python3 $tools/github-search/github-endpoints.py -t $GITHUB_TOKEN -d $target_domain > $recon_dir/$target_domain/.tmp/github_endpoint.txt
@@ -1667,8 +1772,8 @@ function webtehnologies(){
 		curl -O https://raw.githubusercontent.com/rverton/webanalyze/master/technologies.json
 
 		# для просто субдоменов
-		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "nuclei -u _target_ -silent -t $tools/solo-nuclei-templates/technologies/ -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/_target_.txt" -v
-		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "webanalyze -host _target_ -apps technologies.json -silent -redirect -crawl 10 >> $recon_dir/$target_domain/scan/webtechnologies/_target_.txt" -v
+		#interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "nuclei -u _target_ -silent -t $tools/solo-nuclei-templates/technologies/ -r $dns_resolver -o $recon_dir/$target_domain/scan/webtechnologies/_target_.txt" -v
+		interlace -tL $recon_dir/$target_domain/subdomain/subdomains.txt -threads 5 -c "webanalyze -host _target_ -apps technologies.json -silent -redirect -crawl 5 >> $recon_dir/$target_domain/scan/webtechnologies/_target_.txt" -v
 
 		rm $reconwtf_dir/*.json
 		rm technologies.json
@@ -1922,18 +2027,19 @@ function nucleifuzzer(){
 		if [[ $NUCLEI_FUZZING == "true" ]]; then
 		echo "start nucleifuzzing"
 		
-			cat $recon_dir/$target_domain/gf/xss.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/xss/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/xss.txt
-			cat $recon_dir/$target_domain/gf/ssti.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/ssti/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/ssti.txt
-			cat $recon_dir/$target_domain/gf/ssrf.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/ssrf/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/ssrf.txt
-			cat $recon_dir/$target_domain/gf/sqli.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/sqli/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/sqli.txt
+			cat $recon_dir/$target_domain/gf/xss.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/xss/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/xss.txt
+			cat $recon_dir/$target_domain/gf/ssti.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/ssti/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/ssti.txt
+			cat $recon_dir/$target_domain/gf/ssrf.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/ssrf/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/ssrf.txt
+			cat $recon_dir/$target_domain/gf/sqli.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/sqli/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/sqli.txt
 
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/xxe/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/xxe.txt
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/rfi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/rfi.txt
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/redirect/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/nuclei_redirect.txt
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/lfi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/lfi.txt
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/csti/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/csti.txt
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/crlf/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/crlf.txt
-			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/fuzzing-templates-endpoint/cmdi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/cmdi.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/xxe/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/xxe.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/rfi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/rfi.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/redirect/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/nuclei_redirect.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/lfi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/lfi.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/csti/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/csti.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/crlf/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/crlf.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/cmdi/ -r $dns_resolver -o $recon_dir/$target_domain/vulns/cmdi.txt
+			cat $recon_dir/$target_domain/webs/url_extract.txt | nuclei -silent -t $tools/solo-nuclei-templates/endpoint-fuzz/content-injection.yaml -r $dns_resolver -o $recon_dir/$target_domain/vulns/content-injection.txt
 
 		if [[ $ntfy_end_modules == "true" ]]; then
 
@@ -1990,10 +2096,7 @@ function x4xxbypass(){
 }
 
 
-function clearempity(){
-	find . -type f -empty -exec rm {} \;
-	find . -type d -empty -exec rmdir {} \;
-}
+
 
 function archive_scan(){
 	
@@ -2010,7 +2113,7 @@ function archive_scan(){
 		
 		# Сохраняем настройки сканирования
 
-		echo "# Parametr scanning $target_domain " >> $recon_dir/$target_domain/README.md
+		echo "# Parametr scanning $name " >> $recon_dir/$target_domain/README.md
 
 		echo "* Command: $0 -d $target_domain -m $company -cidr $cidr -c $cookie -g $config -x $scope_list" >> $recon_dir/$target_domain/README.md
 
@@ -2148,6 +2251,44 @@ function archive_scan(){
 			$ntfy
 		fi
 
+		if [[ $notify_end_count_script == "true" ]]; then
+			
+			# отправляем общий результат сканирования
+			cat $recon_dir/$target_domain/README.md | notify -bulk -id $notify_bot_endsan_result_id
+
+			# чекаем изменения в субдоменах, формируем текст и отправляем в Discord
+			# Сохраняем вывод diff в переменную
+			diff_output_new_subdomain=$(python3 $tools/single-tools/diffy.py "$recon_dir/$target_domain/subdomain/subdomains.txt" "$recon_dir/$target_domain/archive/subdomain/subdomains.txt" | grep '^\(-\|+\)[^+-]')
+			# Формируем многострочный текст с помощью printf
+			if [ -n "$diff_output_new_subdomain" ]; then
+				printf "Treason in subdomains: %s -> %s\n-----------------------------------------\n%s" "https://hackerone.com/$name/" "$target_domain" "$diff_output_new_subdomain" | notify -bulk -id "$notify_bot_new_subdomain_id"
+			fi
+
+			# чекаем захват субдоменов
+			# Проверяем, существует ли файл и не пуст ли он
+			if [ -s "$recon_dir/$target_domain/subdomain/subtakeover.txt" ]; then
+				# Если файл существует и не пустой, отправляем его содержимое через утилиту notify
+				cat "$recon_dir/$target_domain/subdomain/subtakeover.txt" | notify -bulk -id "$notify_bot_subdomain_takeover_id"
+			fi
+
+			if [ -s "$recon_dir/scope.txt" ]; then
+				# Если файл существует и не пустой, отправляем его содержимое через утилиту notify
+				diff_output_new_scope=$(python3 $tools/single-tools/diffy.py "$recon_dir/scope.txt" "$recon_dir/$target_domain/archive/scope.txt" | grep '^[+-]')
+				# Формируем многострочный текст с помощью printf
+				if [ -n "$diff_output_new_scope" ]; then
+        			printf "New Scope in Programm: %s  %s\n-----------------------------------------\n%s" "https://hackerone.com/$name/" "" "$diff_output_new_scope" | notify -bulk -id "$notify_bot_new_scope_id"
+    			fi
+			fi
+
+		fi
+
+
+		# обновляем файл если там скопились записи прошлых сканов
+		recon_DIFF="$recon_dir/$target_domain/DIFF_RESULT.md"
+		if [ -f "$recon_DIFF" ]; then
+			echo "" > "$recon_DIFF"
+			echo "Файл $recon_DIFF был перезаписан."
+		fi
 
 		echo " " >> $recon_dir/$target_domain/DIFF_RESULT.md
 		# начинаем сравнивать через diff
@@ -2282,6 +2423,7 @@ function archive_scan(){
 		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
 		
 		cp -r $recon_dir/$target_domain/directories $recon_dir/$target_domain/archive/directories
+		cp -f $recon_dir/scope.txt $recon_dir/$target_domain/archive/scope.txt
 
 		date=$(date +"%Y.%m.%d.%k")
 		touch $recon_dir/$target_domain/archive/date.txt
@@ -2312,6 +2454,7 @@ function archive_scan(){
 		cp -r $recon_dir/$target_domain/subdomain $recon_dir/$target_domain/archive/subdomain
 		cp -r $recon_dir/$target_domain/vulns $recon_dir/$target_domain/archive/vulns
 		cp -r $recon_dir/$target_domain/webs $recon_dir/$target_domain/archive/webs
+		cp -f $recon_dir/scope.txt $recon_dir/$target_domain/archive/scope.txt
 		
 		cp -r $recon_dir/$target_domain/directories $recon_dir/$target_domain/archive/directories
 		# gf hosts js osint scan screenshots subdomain  vulns webs
@@ -2333,7 +2476,7 @@ function archive_md_lists(){
 	cp $recon_dir/$target_domain/README.md $recon_dir/$target_domain/archive/back_md/$date/README.md
 	cp $recon_dir/$target_domain/DIFF_RESULT.md $recon_dir/$target_domain/archive/back_md/$date/DIFF_RESULT.md
 	cp $recon_dir/$target_domain/CheckList.md $recon_dir/$target_domain/archive/back_md/$date/CheckList.md
-	
+	cp -f $recon_dir/scope.txt $recon_dir/$target_domain/archive/scope.txt
 
 }
 
@@ -2508,6 +2651,42 @@ function init(){ # инициализация разведки на основе
 		url_gf
 		url_ext_file
 		domain_info
+		clearempity
+	elif [[ -n $scan_now ]]; then # активное сканирование и атаки только для новых найденых субдоменов
+		Subdomain_enum_passive
+		Subdomain_enum
+		subdomain_permytation
+		subdomain_bruteforce
+		SubRresult
+		zonetransfer_takeovers
+		checkWAF
+		s3bucket
+		scan_hosts_passive
+		checkWAF
+		ips
+		ip2provider
+		webtehnologies
+		# сдесь начинается функионал более углубленного сканирования только для новых найденых субдоменов
+		diffiy_output_new_scan_now_sub=$(python3 $tools/single-tools/diffy.py "$recon_dir/$target_domain/subdomain/subdomains.txt" "$recon_dir/$target_domain/archive/subdomain/subdomains.txt" | grep '^[+-] ' | sed 's/^[+-] //')
+		if [ -e "$recon_dir/$target_domain/subdomain/subdomains.txt" ] && [ -e "$recon_dir/$target_domain/archive/subdomain/subdomains.txt" ] && [ -n "$diffiy_output_new_scan_now_sub" ]; then
+			preparation_sacn_now_sub
+			
+			#scan_hosts_passive
+			#webs
+			#endpoint_enum_passive
+			#endpoint_enum_agressive
+			#url_gf
+			#url_ext_file
+			# тут идут активные атаки
+			#nuclei_check
+			#openreditrct
+			#x4xxbypass
+			#nucleifuzzer
+			# тут заканчиваюся атаки
+			#domain_info
+			
+			end_sacn_now_sub
+		fi
 		clearempity
 	fi
 	
